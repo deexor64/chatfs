@@ -1,0 +1,8 @@
+[package]
+name = "querysync"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ignore = "0.4.25"
+serde = "1.0.228"
