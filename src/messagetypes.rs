@@ -1,0 +1,55 @@
+use std::collections::HashMap;
+
+use serde::Deserialize;
+use serde_json::Value;
+
+#[derive(Debug, Deserialize)]
+pub enum MessageType {
+    #[serde(rename = "connect_ack")]
+    ConnectAck,
+    #[serde(rename = "get_context")]
+    GetContext,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum Command {
+    #[serde(rename = "list")]
+    List,
+    #[serde(rename = "content")]
+    Content,
+    #[serde(rename = "create")]
+    Create,
+    #[serde(rename = "rename")]
+    Rename,
+    #[serde(rename = "copy")]
+    Copy,
+    #[serde(rename = "move")]
+    Move,
+    #[serde(rename = "delete")]
+    Delete,
+    #[serde(rename = "copycontent")]
+    CopyContent,
+    #[serde(rename = "movecontent")]
+    MoveContent,
+    #[serde(rename = "deletecontent")]
+    DeleteContent,
+}
+
+
+
+
+
+#[derive(Debug, Deserialize)]
+pub struct ConnectAck {
+    pub status: bool,
+    pub message_type: MessageType,
+    pub server_url: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GetContext {
+    pub status: bool,
+    pub message_type: MessageType,
+    pub command: Command,
+    pub queries: HashMap<String, Value>
+}

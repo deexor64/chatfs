@@ -28,7 +28,7 @@ struct Node {
  * Returns:
  *   - JSON string representing the directory tree, relative to working directory
  */
-pub fn list(path: String, recursive: bool, item_type: Option<&str>, ignore_file: Option<&str>) -> String {
+pub fn list(path: &str, recursive: bool, item_type: Option<&str>, ignore_file: Option<&str>) -> String {
     // TODO: Add a guard to reject paths above the working directory
 
     let path = PathBuf::from(path);
@@ -70,7 +70,7 @@ pub fn list(path: String, recursive: bool, item_type: Option<&str>, ignore_file:
     let root_node = build_node(&path, &paths, item_type);
 
     // Serialize to JSON string
-    serde_json::to_string_pretty(&root_node).unwrap()
+    serde_json::to_string(&root_node).unwrap()
 }
 
 
