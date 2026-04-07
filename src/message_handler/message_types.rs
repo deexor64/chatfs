@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-
 use serde::Deserialize;
 use serde_json::Value;
+use std::collections::HashMap;
 
+// Message field types
 #[derive(Debug, Deserialize)]
 pub enum MessageType {
     #[serde(rename = "connect_ack")]
@@ -35,10 +35,7 @@ pub enum Command {
     DeleteContent,
 }
 
-
-
-
-
+// Actual messages
 #[derive(Debug, Deserialize)]
 pub struct ConnectAck {
     pub status: bool,

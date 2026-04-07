@@ -1,6 +1,9 @@
 use ignore::WalkBuilder;
 use serde::Serialize;
-use std::path::{Path, PathBuf};
+use serde_json::Value;
+use std::{collections::HashMap, path::{Path, PathBuf}};
+
+use crate::path_guards::safe_path;
 
 #[derive(Serialize)]
 struct Node {
@@ -17,8 +20,8 @@ struct Node {
  *   - path: Path relative to working directory
  *                Examples: "", "src", "src/dir"
  *   - recursive: If true, child directories are listed recursively
- *                Special behavior with filter = 'f': directories are included only if they contain files
- *   - filter: Optional filter for listing:
+ *                Special behavior with itemtype = 'file': directories are included only if they contain files
+ *   - itemtype: Item type for listing:
  *             folder - list directories only
  *             file   - list files only
  *             all    - list both files and directories
@@ -26,12 +29,24 @@ struct Node {
  *                  All paths in this file are excluded from the listing.
  *
  * Returns:
- *   - JSON string representing the directory tree, relative to working directory
+ *   - JSON representing the directory tree, relative to working directory
  */
-pub fn list(path: &str, recursive: bool, item_type: Option<&str>, ignore_file: Option<&str>) -> String {
-    // TODO: Add a guard to reject paths above the working directory
+pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Value {
+    // Extract query params
+    let recursive = queries.get("recursive")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
-    let path = PathBuf::from(path);
+    let item_type = queries.get("itemtype")
+        .and_then(|v| v.as_str())
+        .unwrap_or("all");
+
+    let path = queries.get("path")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty()) // convert empty path
+        .unwrap_or(".");
+
+    let path = safe_path(PathBuf::from(path));
 
     // Builder
     let mut builder = WalkBuilder::new(&path);
@@ -56,8 +71,8 @@ pub fn list(path: &str, recursive: bool, item_type: Option<&str>, ignore_file: O
 
             // Apply filtering
             match item_type {
-                Some("folder") if path.is_dir() => paths.push(path),
-                Some("file") if path.is_file() => paths.push(path),
+                "folder" if path.is_dir() => paths.push(path),
+                "file" if path.is_file() => paths.push(path),
                 _ => paths.push(path)
             }
         }
@@ -69,12 +84,13 @@ pub fn list(path: &str, recursive: bool, item_type: Option<&str>, ignore_file: O
     // Build JSON tree recursively
     let root_node = build_node(&path, &paths, item_type);
 
-    // Serialize to JSON string
-    serde_json::to_string(&root_node).unwrap()
+    // Serialize to JSON
+    serde_json::to_value(&root_node).unwrap()
+
 }
 
 
-fn build_node(root: &Path, paths: &[PathBuf], filter: Option<&str>) -> Node {
+fn build_node(root: &Path, paths: &[PathBuf], item_type: &str) -> Node {
     let mut children = Vec::new();
 
     for path in paths {
@@ -83,12 +99,12 @@ fn build_node(root: &Path, paths: &[PathBuf], filter: Option<&str>) -> Node {
 
             if components.len() == 1 {
                 if path.is_dir() {
-                    let child_node = build_node(path, paths, filter);
+                    let child_node = build_node(path, paths, item_type);
 
-                    if filter != Some("file") || child_node.children.as_ref().map_or(false, |v| !v.is_empty()) {
+                    if item_type != "file" || child_node.children.as_ref().map_or(false, |v| !v.is_empty()) {
                         children.push(child_node);
                     }
-                } else if path.is_file() && (filter != Some("folder")) {
+                } else if path.is_file() && (item_type != "folder") {
                     children.push(Node {
                         name: path
                             .file_name()

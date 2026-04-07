@@ -1,18 +1,17 @@
 use serde::Serialize;
+use serde_json::Value;
 
-
+// Reply field types
 #[derive(Debug, Serialize)]
 pub enum ReplyType {
     #[serde(rename = "code_context")]
     CodeContext,
 }
 
-
-
-
+// Acutal replies
 #[derive(Serialize)]
-pub struct CodeContext<'a> {
+pub struct CodeContext {
     pub status: bool,
     pub reply_type: ReplyType,
-    pub context: &'a str,
+    pub context: Value,
 }
