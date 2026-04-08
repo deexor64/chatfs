@@ -4,8 +4,8 @@ pub mod message_handler;
 
 use tungstenite::{Message, connect};
 
-use message_handler::message_handler::{handle_ping, handle_connect_ack, handle_get_context};
-use message_handler::message_types::{ConnectAck, GetContext};
+use message_handler::message_handler::{handle_ping, handle_connect_ack, handle_query_codebase};
+use message_handler::message_types::{ConnectAck, QueryCodebase};
 
 fn main() {
     let (mut socket, _response) = connect("ws://127.0.0.1:8000/client/").expect("Can't connect");
@@ -23,8 +23,8 @@ fn main() {
             if let Ok(parsed) =  serde_json::from_str::<ConnectAck>(&msg) {
                 handle_connect_ack(parsed);
             }
-            else if let Ok(parsed) =  serde_json::from_str::<GetContext>(&msg) {
-                handle_get_context(parsed, &mut socket);
+            else if let Ok(parsed) =  serde_json::from_str::<QueryCodebase>(&msg) {
+                handle_query_codebase(parsed, &mut socket);
             }
             // Invalid
             else {

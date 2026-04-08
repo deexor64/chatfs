@@ -50,21 +50,3 @@ pub fn safe_path(path: PathBuf) -> PathBuf {
     // Return safe path
     final_path
 }
-
-fn main() {
-    let matcher = build_matcher(".myignore");
-
-    let test_paths = vec![
-        PathBuf::from("target/debug/app"),
-        PathBuf::from("src/main.rs"),
-        PathBuf::from("logs/error.log"),
-    ];
-
-    for path in test_paths {
-        if is_ignored(&path, &matcher) {
-            println!("IGNORED: {}", path.display());
-        } else {
-            println!("NOT IGNORED: {}", path.display());
-        }
-    }
-}

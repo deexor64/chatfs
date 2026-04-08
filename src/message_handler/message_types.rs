@@ -7,8 +7,8 @@ use std::collections::HashMap;
 pub enum MessageType {
     #[serde(rename = "connect_ack")]
     ConnectAck,
-    #[serde(rename = "get_context")]
-    GetContext,
+    #[serde(rename = "query_codebase")]
+    QueryCodebase,
 }
 
 #[derive(Debug, Deserialize)]
@@ -19,20 +19,16 @@ pub enum Command {
     Content,
     #[serde(rename = "create")]
     Create,
-    #[serde(rename = "rename")]
-    Rename,
     #[serde(rename = "copy")]
     Copy,
     #[serde(rename = "move")]
     Move,
     #[serde(rename = "delete")]
     Delete,
-    #[serde(rename = "copycontent")]
-    CopyContent,
-    #[serde(rename = "movecontent")]
-    MoveContent,
-    #[serde(rename = "deletecontent")]
-    DeleteContent,
+    #[serde(rename = "writeline")]
+    WriteLine,
+    #[serde(rename = "write")]
+    Write
 }
 
 // Actual messages
@@ -44,7 +40,7 @@ pub struct ConnectAck {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct GetContext {
+pub struct QueryCodebase {
     pub status: bool,
     pub message_type: MessageType,
     pub command: Command,

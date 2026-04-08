@@ -1,8 +1,9 @@
 use serde_json::Value;
 use tungstenite::{Bytes, Message, WebSocket, stream::MaybeTlsStream};
+use std::path::PathBuf;
 use std::{collections::HashMap, net::TcpStream};
 
-use crate::message_handler::message_types::{Command, ConnectAck, GetContext};
+use crate::message_handler::message_types::{Command, ConnectAck, QueryCodebase};
 use crate::message_handler::reply_types::{ReplyType, CodeContext};
 use crate::operations;
 
@@ -32,17 +33,22 @@ pub fn handle_connect_ack(message: ConnectAck) {
 }
 
 // Request for codebase contexts
-pub fn handle_get_context(message: GetContext, socket: &mut WebSocket<MaybeTlsStream<TcpStream>>) {
+pub fn handle_query_codebase(message: QueryCodebase, socket: &mut WebSocket<MaybeTlsStream<TcpStream>>) {
     let queries: HashMap<String, Value> = message.queries;
     let context: Value;
 
+    // Ignore file
+    // ISSUE: Doesn't work
+    let ignorefile = if PathBuf::from(".qsignore").exists() {
+            Some(".qsignore")
+        } else {
+            None
+        };
+
     match message.command {
-        Command::List => { context = operations::list::list(&queries, None) }
-        _ => { context = serde_json::json!({
-            "status": false,
-            "reply_type": ReplyType::CodeContext,
-            "context": "Not available"
-        })}
+        Command::List => { context = operations::list::list(&queries, ignorefile) }
+        Command::Content => { context = operations::content::content(&queries, ignorefile) }
+        _ => { context = serde_json::json!("Not available")}
     }
 
     let response = CodeContext {

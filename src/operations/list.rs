@@ -1,6 +1,6 @@
 use ignore::WalkBuilder;
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::{collections::HashMap, path::{Path, PathBuf}};
 
 use crate::path_guards::safe_path;
@@ -13,31 +13,13 @@ struct Node {
     children: Option<Vec<Node>>,
 }
 
-/*
- * Generates a JSON tree of the given relative path
- *
- * Parameters:
- *   - path: Path relative to working directory
- *                Examples: "", "src", "src/dir"
- *   - recursive: If true, child directories are listed recursively
- *                Special behavior with itemtype = 'file': directories are included only if they contain files
- *   - itemtype: Item type for listing:
- *             folder - list directories only
- *             file   - list files only
- *             all    - list both files and directories
- *   - ignore_file: Optional path to an ignore file
- *                  All paths in this file are excluded from the listing.
- *
- * Returns:
- *   - JSON representing the directory tree, relative to working directory
- */
 pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Value {
     // Extract query params
     let recursive = queries.get("recursive")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let item_type = queries.get("itemtype")
+    let item_type = queries.get("item_type")
         .and_then(|v| v.as_str())
         .unwrap_or("all");
 
@@ -85,10 +67,11 @@ pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Valu
     let root_node = build_node(&path, &paths, item_type);
 
     // Serialize to JSON
-    serde_json::to_value(&root_node).unwrap()
-
+    json!({
+        "status": true,
+        "list": serde_json::to_value(&root_node).unwrap()
+    })
 }
-
 
 fn build_node(root: &Path, paths: &[PathBuf], item_type: &str) -> Node {
     let mut children = Vec::new();
