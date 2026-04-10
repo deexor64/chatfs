@@ -46,9 +46,13 @@ pub fn handle_query_codebase(message: QueryCodebase, socket: &mut WebSocket<Mayb
         };
 
     match message.command {
-        Command::List => { context = operations::list::list(&queries, ignorefile) }
-        Command::Content => { context = operations::content::content(&queries, ignorefile) }
-        _ => { context = serde_json::json!("Not available")}
+        Command::List => context = operations::list::list(&queries, ignorefile),
+        Command::Content => context = operations::content::content(&queries, ignorefile),
+        Command::Create => context = operations::create::create(&queries, ignorefile),
+        Command::Copy => context = operations::copy::copy(&queries, ignorefile),
+        Command::Move => context = operations::mv::mv(&queries, ignorefile),
+        Command::Delete => context = operations::delete::delete(&queries, ignorefile),
+        Command::Write => context = operations::write::write(&queries, ignorefile),
     }
 
     let response = CodeContext {

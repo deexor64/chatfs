@@ -25,8 +25,6 @@ pub enum Command {
     Move,
     #[serde(rename = "delete")]
     Delete,
-    #[serde(rename = "writeline")]
-    WriteLine,
     #[serde(rename = "write")]
     Write
 }

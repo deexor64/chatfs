@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 use std::{collections::HashMap, path::{Path, PathBuf}};
 
-use crate::path_guards::safe_path;
+use crate::path_guards::{safe_path, PathType};
 
 #[derive(Serialize)]
 struct Node {
@@ -25,10 +25,12 @@ pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Valu
 
     let path = queries.get("path")
         .and_then(|v| v.as_str())
-        .filter(|s| !s.is_empty()) // convert empty path
         .unwrap_or(".");
 
-    let path = safe_path(PathBuf::from(path));
+    let path = match safe_path(PathBuf::from(path), PathType::Any, true, ignore_file) {
+        Ok(p) => p,
+        Err(e) => return json!({ "status": false, "message": e })
+    };
 
     // Builder
     let mut builder = WalkBuilder::new(&path);

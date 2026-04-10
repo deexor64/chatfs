@@ -1,7 +1,7 @@
 use serde_json::{Value, json};
 use std::{collections::HashMap, fs::File, io::{BufRead, BufReader}, path::PathBuf};
 
-use crate::path_guards::{build_matcher, is_ignored, safe_path};
+use crate::path_guards::{PathType, safe_path};
 
 pub fn content(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Value {
     // Extract query params
@@ -14,19 +14,10 @@ pub fn content(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> V
         .filter(|s| !s.is_empty()) // convert empty path
         .unwrap_or(".");
 
-    let path = safe_path(PathBuf::from(path));
-
-    // Check ignore
-    if let Some(ignore) = ignore_file {
-        let matcher = build_matcher(ignore);
-
-        if is_ignored(&path, &matcher) {
-            return json!({
-                "status": false,
-                "message": "Path is ignored".to_string()
-            });
-        }
-    }
+    let path = match safe_path(PathBuf::from(path), PathType::File, false, ignore_file) {
+        Ok(p) => p,
+        Err(e) => return json!({ "status": true, "message": e })
+    };
 
     // Check if path is a directory
     if path.is_dir() {
