@@ -3,29 +3,31 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-use crate::path_guards::{PathType, safe_path};
+use crate::path_validation::operational_path::{ExpectedType, OperationalPath};
 
-pub fn delete(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Value {
-    let path = queries.get("path")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+pub fn delete(queries: &HashMap<String, Value>, _ignore_file: Option<&str>) -> Value {
+    let _path = queries.get("path")
+        .and_then(|v| v.as_str()).unwrap();
 
-    let path = match safe_path(PathBuf::from(path), PathType::Any, false, ignore_file) {
-        Ok(p) => p,
-        Err(e) => return json!({ "status": false, "message": e })
+    let _op_path = OperationalPath::from(PathBuf::from(_path))
+        .and_then(|p| p.within_workspace())
+        .and_then(|p| p.no_direct_root())
+        .and_then(|p| p.expect_type(ExpectedType::AnyExist));
+
+    let path = match _op_path {
+        Ok(op) => op.build(),
+        Err(e) => return json!({"status": false, "error": format!("path: {}", e)})
     };
 
     if path.is_dir() {
         match fs::remove_dir_all(&path) {
-            Ok(_) => json!({ "status": true, "message": format!("Folder deleted: {}", path.display()) }),
-            Err(e) => json!({ "status": false, "message": format!("Failed to delete folder: {}", e) }),
-        }
-    } else if path.is_file() {
-        match fs::remove_file(&path) {
-            Ok(_) => json!({ "status": true, "message": format!("File deleted: {}", path.display()) }),
-            Err(e) => json!({ "status": false, "message": format!("Failed to delete file: {}", e) }),
+            Ok(_) => json!({ "status": true, "message": format!("Folder '{}' deleted", _path) }),
+            Err(e) => json!({ "status": false, "error": format!("Failed to delete folder '{}' ({})",_path,  e) }),
         }
     } else {
-        json!({ "status": false, "message": "Path not found" })
+        match fs::remove_file(&path) {
+            Ok(_) => json!({ "status": true, "message": format!("File '{}' deleted", _path) }),
+            Err(e) => json!({ "status": false, "error": format!("Failed to delete file '{}' ({})",_path,  e) }),
+        }
     }
 }

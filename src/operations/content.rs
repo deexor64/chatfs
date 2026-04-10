@@ -1,36 +1,29 @@
 use serde_json::{Value, json};
 use std::{collections::HashMap, fs::File, io::{BufRead, BufReader}, path::PathBuf};
 
-use crate::path_guards::{PathType, safe_path};
+use crate::path_validation::operational_path::{ExpectedType, OperationalPath};
 
-pub fn content(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Value {
-    // Extract query params
+
+pub fn content(queries: &HashMap<String, Value>, _ignore_file: Option<&str>) -> Value {
     let lines = queries.get("lines")
-        .and_then(|v| v.as_str())
-        .unwrap_or("1-*");
+        .and_then(|v| v.as_str()).unwrap();
 
-    let path = queries.get("path")
-        .and_then(|v| v.as_str())
-        .filter(|s| !s.is_empty()) // convert empty path
-        .unwrap_or(".");
+    let _path = queries.get("path")
+        .and_then(|v| v.as_str()).unwrap();
 
-    let path = match safe_path(PathBuf::from(path), PathType::File, false, ignore_file) {
-        Ok(p) => p,
-        Err(e) => return json!({ "status": true, "message": e })
+    let _op_path = OperationalPath::from(PathBuf::from(_path))
+        .and_then(|p| p.within_workspace())
+        .and_then(|p| p.expect_type(ExpectedType::File));
+
+    let path = match _op_path {
+        Ok(op) => op.build(),
+        Err(e) => return json!({"status": false, "error": format!("path: {}", e)})
     };
-
-    // Check if path is a directory
-    if path.is_dir() {
-        return json!({
-            "status": false,
-            "message": "Path is a directory".to_string()
-        });
-    }
 
     // Open the file
     let file = match File::open(&path) {
         Ok(f) => f,
-        Err(_) => return Value::String("File not found or inaccessible".to_string()),
+        Err(_) => return json!({"status": false, "error": format!("Failed to open file '{}'", _path)}),
     };
 
     // Read lines
@@ -41,7 +34,7 @@ pub fn content(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> V
         match line {
             Ok(l) => content_lines.push(l),
             Err(_) => {
-                return Value::String("Non-readable or binary file".to_string());
+                return json!({"status": false, "error": format!("File '{}' is a non-readable or binary file", _path)});
             }
         }
     }
@@ -90,7 +83,7 @@ fn parse_lines(lines: &str, total_lines: usize, max_lines: usize) -> (usize, usi
     // Clamp range to max_lines
     if end.saturating_sub(start) > max_lines {
         end = start + max_lines;
-        note.push_str(format!("Requested range exceeded max lines - truncated; ").as_str());
+        note.push_str("Requested range exceeded max lines - truncated; ");
     }
 
     // Ensure end is greater than or equal to start

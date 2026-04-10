@@ -4,9 +4,10 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 
-use crate::path_guards::{PathType, safe_path};
+use crate::path_validation::operational_path::{ExpectedType, OperationalPath};
 
-pub fn write(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Value {
+
+pub fn write(queries: &HashMap<String, Value>, _ignore_file: Option<&str>) -> Value {
     let lines = queries.get("lines")
         .and_then(|v| v.as_str())
         .unwrap_or("1-*");
@@ -19,24 +20,23 @@ pub fn write(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Val
         .and_then(|v| v.as_str())
         .unwrap_or("");
 
-    let path = queries.get("path")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    let _path = queries.get("path")
+        .and_then(|v| v.as_str()).unwrap();
 
-    let path = match safe_path(PathBuf::from(path), PathType::Any, false, ignore_file) {
-        Ok(p) => p,
-        Err(e) => return json!({ "status": false, "message": e })
+    let _op_path = OperationalPath::from(PathBuf::from(_path))
+        .and_then(|p| p.within_workspace())
+        .and_then(|p| p.no_direct_root())
+        .and_then(|p| p.expect_type(ExpectedType::File));
+
+    let path = match _op_path {
+        Ok(op) => op.build(),
+        Err(e) => return json!({"status": false, "error": format!("path: {}", e)})
     };
-
-    // Path must be a file
-    if !path.is_file() {
-        return json!({ "status": false, "message": "Path is not a file or does not exist" });
-    }
 
     // Read existing file lines
     let file = match File::open(&path) {
         Ok(f) => f,
-        Err(_) => return json!({ "status": false, "message": "Cannot open file for reading" }),
+        Err(_) => return json!({ "status": false, "message": "path: Path '{}' does not exists or is not a file" }),
     };
 
     let reader = BufReader::new(file);
@@ -72,7 +72,7 @@ pub fn write(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Val
         _ => {
             return json!({
                 "status": false,
-                "message": "Invalid mode. Use 'replace' or 'shift'"
+                "error": "mode: Invalid mode"
             });
         }
     }
@@ -81,17 +81,14 @@ pub fn write(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Val
     match File::create(&path) {
         Ok(mut f) => {
             if let Err(e) = writeln!(f, "{}", line_content.join("\n")) {
-                return json!({ "status": false, "message": format!("Failed to write file: {}", e) });
+                return json!({ "status": false, "error": format!("Failed to write file '{}' ({})",_path, e) });
             }
             json!({
                 "status": true,
-                "message": format!("Successfully wrote {} line(s) at position {}", insert_count, lines)
+                "message": format!("Successfully wrote {} line(s) at position '{}' of '{}'", insert_count, lines, _path)
             })
         }
-        Err(e) => json!({
-            "status": false,
-            "message": format!("Failed to open file for writing: {}", e)
-        }),
+        Err(e) => json!({ "status": false, "error": format!("Failed to write file '{}' ({})",_path, e) }),
     }
 }
 

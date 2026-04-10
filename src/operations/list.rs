@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 use std::{collections::HashMap, path::{Path, PathBuf}};
 
-use crate::path_guards::{safe_path, PathType};
+use crate::path_validation::operational_path::{ExpectedType, OperationalPath};
 
 #[derive(Serialize)]
 struct Node {
@@ -14,25 +14,25 @@ struct Node {
 }
 
 pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Value {
-    // Extract query params
     let recursive = queries.get("recursive")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
+        .and_then(|v| v.as_bool()).unwrap();
 
     let item_type = queries.get("item_type")
-        .and_then(|v| v.as_str())
-        .unwrap_or("all");
+        .and_then(|v| v.as_str()).unwrap();
 
-    let path = queries.get("path")
-        .and_then(|v| v.as_str())
-        .unwrap_or(".");
+    let _path = queries.get("path")
+        .and_then(|v| v.as_str()).unwrap();
 
-    let path = match safe_path(PathBuf::from(path), PathType::Any, true, ignore_file) {
-        Ok(p) => p,
-        Err(e) => return json!({ "status": false, "message": e })
+    let _op_path = OperationalPath::from(PathBuf::from(_path))
+        .and_then(|p| p.within_workspace())
+        .and_then(|p| p.expect_type(ExpectedType::Dir));
+
+    let path = match _op_path {
+        Ok(op) => op.build(),
+        Err(e) => return json!({"status": false, "error": format!("path: {}", e)})
     };
 
-    // Builder
+    // Walk builder
     let mut builder = WalkBuilder::new(&path);
 
     // Add ignore file
