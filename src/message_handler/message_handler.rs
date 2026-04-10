@@ -18,15 +18,18 @@ pub fn handle_ping(message: Bytes, socket: &mut WebSocket<MaybeTlsStream<TcpStre
 // Initial connection acknowledgement
 pub fn handle_connect_ack(message: ConnectAck) {
     if message.status == false {
-        println!("[UNSUCCESSFUL] → https://couldn't connect to server/");
+        println!("[UNSUCCESSFUL] → http://couldn't connect to server/");
         return;
     }
     println!(r#"
-        ___                    ___
-       / _ \ _  _ ___ _ _ _  _/ __|_  _ _ _  __
-      | (_) | || / -_) '_| || \__ \ || | ' \/ _|
-       \__\_\\_,_\___|_|  \_, |___/\_, |_||_\__|
-                          |__/     |__/
+            __  __ __   ____  ______  _____  _____
+           /  ]|  |  | /    ||      ||     |/ ___/
+          /  / |  |  ||  o  ||      ||   __(   \_
+         /  /  |  _  ||     ||_|  |_||  |_  \__  |
+        /   \_ |  |  ||  _  |  |  |  |   _] /  \ |
+        \     ||  |  ||  |  |  |  |  |  |   \    |
+         \____||__|__||__|__|  |__|  |__|    \___|
+
     "#);
 
     println!("[CONNECTED] → {}\n\n", message.server_url);
