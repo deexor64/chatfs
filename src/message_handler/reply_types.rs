@@ -11,6 +11,7 @@ pub enum ReplyType {
 // Acutal replies
 #[derive(Serialize)]
 pub struct CodeContext {
+    pub id: String,
     pub status: bool,
     pub reply_type: ReplyType,
     pub context: Value,

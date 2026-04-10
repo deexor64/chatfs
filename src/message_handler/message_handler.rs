@@ -34,6 +34,7 @@ pub fn handle_connect_ack(message: ConnectAck) {
 
 // Request for codebase contexts
 pub fn handle_query_codebase(message: QueryCodebase, socket: &mut WebSocket<MaybeTlsStream<TcpStream>>) {
+    let id: String = message.id;
     let queries: HashMap<String, Value> = message.queries;
     let context: Value;
 
@@ -56,6 +57,7 @@ pub fn handle_query_codebase(message: QueryCodebase, socket: &mut WebSocket<Mayb
     }
 
     let response = CodeContext {
+        id: id,
         status: true,
         reply_type: ReplyType::CodeContext,
         context: context

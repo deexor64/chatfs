@@ -7,9 +7,10 @@ use tungstenite::{Message, connect};
 use message_handler::message_handler::{handle_ping, handle_connect_ack, handle_query_codebase};
 use message_handler::message_types::{ConnectAck, QueryCodebase};
 
+// TODO: Make socket connections async
 fn main() {
-    // let (mut socket, _response) = connect("ws://127.0.0.1:8000/client/").expect("Can't connect");
-    let (mut socket, _response) = connect("wss://querysync-server.onrender.com/client/").expect("Can't connect");
+    let (mut socket, _response) = connect("ws://127.0.0.1:8000/client/").expect("Can't connect");
+    // let (mut socket, _response) = connect("wss://querysync-server.onrender.com/client/").expect("Can't connect");
 
     loop {
         let message = socket.read().expect("Error reading message");
