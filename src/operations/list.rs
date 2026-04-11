@@ -66,7 +66,7 @@ pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Valu
     paths.sort();
 
     // Build JSON tree recursively
-    let root_node = build_node(&path, &paths, item_type);
+    let root_node = build_node(&path, &paths, item_type, true);
 
     // Serialize to JSON
     json!({
@@ -75,7 +75,7 @@ pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Valu
     })
 }
 
-fn build_node(root: &Path, paths: &[PathBuf], item_type: &str) -> Node {
+fn build_node(root: &Path, paths: &[PathBuf], item_type: &str, is_root: bool) -> Node {
     let mut children = Vec::new();
 
     for path in paths {
@@ -84,7 +84,7 @@ fn build_node(root: &Path, paths: &[PathBuf], item_type: &str) -> Node {
 
             if components.len() == 1 {
                 if path.is_dir() {
-                    let child_node = build_node(path, paths, item_type);
+                    let child_node = build_node(path, paths, item_type, false);
 
                     if item_type != "file" || child_node.children.as_ref().map_or(false, |v| !v.is_empty()) {
                         children.push(child_node);
@@ -106,11 +106,18 @@ fn build_node(root: &Path, paths: &[PathBuf], item_type: &str) -> Node {
     // Determine node type for this root
     let is_dir = root.is_dir();
 
-    Node {
-        name: root
+    // The worksapce root must be named "."
+    let name = if is_root {
+        ".".to_string()
+    } else {
+        root
             .file_name()
             .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_else(|| root.to_string_lossy().to_string()),
+            .unwrap_or_default()
+    };
+
+    Node {
+        name: name,
         item_type: if is_dir { "folder".to_string() } else { "file".to_string() },
         children: if is_dir { Some(children) } else { None },
     }
