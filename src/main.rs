@@ -1,25 +1,37 @@
+pub mod tool_config;
 pub mod operations;
 pub mod path_validation;
 pub mod message_handler;
 
 use std::env;
-use dotenv::dotenv;
-use tungstenite::{Message, connect};
 
+use tool_config::config::{self, ConfigKey};
 use message_handler::message_handler::{handle_ping, handle_connect_ack, handle_query_codebase};
 use message_handler::message_types::{ConnectAck, QueryCodebase};
 
-// TODO: Make socket connections async
+use tungstenite::{Message, connect};
+use dotenv::dotenv;
+
+
 fn main() {
-    // Load envars
+    // Load environment variables
     dotenv().ok();
 
+    // Load config
+    config::load_config().map_err(|e| format!("ERROR: {}", e)).unwrap();
+
+    // Temp
+    let _server_url = env::var("SERVER_URL").map_err(|_| "".to_string()).unwrap_or("ws://127.0.0.1:8000/client/".to_string());
+    config::set_config(ConfigKey::Gateway, &_server_url)
+        .map_err(|e| format!("ERROR: {}", e))
+        .unwrap();
+
     // Connect to socket
-    let server_url = env::var("SERVER_URL").unwrap_or_else(|_| "ws://127.0.0.1:8000/client/".to_string());
-    let (mut socket, _response) = connect(server_url).expect("Can't connect");
+    let gateway_url = config::get_config(ConfigKey::Gateway).map_err(|e| format!("ERROR: {}", e)).unwrap();
+    let (mut socket, _response) = connect(gateway_url).map_err(|e| format!("ERROR: {}", e)).unwrap();
 
     loop {
-        let message = socket.read().expect("Error reading message");
+        let message = socket.read().expect("ERROR: Failed to read incoming message");
 
         // Handle ping
         if let Message::Ping(msg) = message {

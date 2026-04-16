@@ -18,7 +18,7 @@ pub fn handle_ping(message: Bytes, socket: &mut WebSocket<MaybeTlsStream<TcpStre
 // Initial connection acknowledgement
 pub fn handle_connect_ack(message: ConnectAck) {
     if message.status == false {
-        println!("[UNSUCCESSFUL] → http://couldn't connect to server/");
+        println!("[UNSUCCESSFUL] → http://couldn't connect to gateway/");
         return;
     }
     println!(r#"
