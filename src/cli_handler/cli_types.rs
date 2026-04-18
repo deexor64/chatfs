@@ -19,8 +19,8 @@ pub enum Commands {
         key: ConfigKey,
     },
     Run {
-        #[arg(short, long)]
-        logging: bool,
+        #[arg(long)]
+        no_logging: bool,
 
         #[arg(short, long)]
         gateway: Option<String>,

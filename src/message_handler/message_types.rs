@@ -39,9 +39,9 @@ pub struct ConnectAck {
 
 #[derive(Debug, Deserialize)]
 pub struct QueryCodebase {
-    pub id: String,
     pub status: bool,
     pub message_type: MessageType,
+    pub id: String,
     pub command: Command,
     pub queries: HashMap<String, Value>
 }

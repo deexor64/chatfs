@@ -1,6 +1,7 @@
 use clap::{Parser};
 
 use crate::cli_handler::cli_types::{Cli, Commands};
+use crate::message_handler::socket_loop::socket_loop;
 use crate::tool_config::config::{create_config, ensure_config, get_config, save_config_cache, set_config};
 use crate::tool_config::config_types::ConfigKey;
 use crate::logger;
@@ -8,7 +9,6 @@ use crate::logger;
 
 pub fn cli_handler() -> Result<(), String>{
     let cli = Cli::parse();
-    logger::enable_logging();
 
     // Ensure config exists
     let config = ensure_config();
@@ -19,7 +19,7 @@ pub fn cli_handler() -> Result<(), String>{
         },
         Err(e) => {
             logger::log_warn(e);
-            logger::log_debug("Creating a fresh config...".to_string());
+            logger::log_info("Creating a new config...".to_string());
 
             let config = create_config();
 
@@ -35,10 +35,6 @@ pub fn cli_handler() -> Result<(), String>{
         }
     }
 
-    // Disable logging until enabled by the cli argument
-    // Any subsequent log messages will be suppressed
-    logger::disable_logging();
-
     match cli.command {
         Some(Commands::SetConfig { key, value }) => {
             return set_config(key, value);
@@ -49,20 +45,26 @@ pub fn cli_handler() -> Result<(), String>{
 
             return Ok(());
         }
-        Some(Commands::Run { logging, gateway }) => {
-            if logging {
-                logger::enable_logging();
+        Some(Commands::Run { no_logging, gateway }) => {
+            if no_logging {
+                logger::disable_logging();
             }
 
+            logger::log_info("Logging is enabled (use '--no-logging' to disable)".to_string());
+
             if let Some(gateway) = gateway {
-                println!("Setting gateway '{}' ...", gateway);
+                socket_loop(gateway)?;
             } else {
                 let gateway = get_config(ConfigKey::Gateway)?;
-                println!("Setting gateway '{}' ...", gateway);
+                socket_loop(gateway)?;
             }
 
             return Ok(());
         },
-        None => { return Ok(()) }
+        None => {
+            // TODO: Add tool notice
+            println!("Tool notice: use 'run' command");
+            return Ok(())
+        }
     }
 }

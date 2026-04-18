@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
-static LOG_ENABLED: AtomicBool = AtomicBool::new(false);
+static LOG_ENABLED: AtomicBool = AtomicBool::new(true);
 
 // Toggle logging ON
 pub fn enable_logging() {

@@ -15,15 +15,15 @@ pub fn ensure_config() -> Result<Config, String> {
     let config_file = get_config_file()?;
 
     if !config_file.exists() {
-        return Err("Config file does not exist".to_string())
+        return Err("Config not found".to_string())
     }
 
     // Attempt to read config file
     let content = std::fs::read_to_string(&config_file)
-        .map_err(|_| "Failed to read config file".to_string())?;
+        .map_err(|_| "Failed to read config".to_string())?;
 
     let config: Config = serde_json::from_str::<Config>(&content)
-        .map_err(|_| "Corrupted or invalid config file".to_string())?;
+        .map_err(|_| "Corrupted or invalid config".to_string())?;
 
     Ok(config)
 }
@@ -37,7 +37,7 @@ pub fn create_config() -> Result<Config, String> {
     let config_file = get_config_file()?;
 
     // Attempt to create new config file
-    let file = File::create(config_file).map_err(|_| "Failed to create config file".to_string())?;
+    let file = File::create(config_file).map_err(|_| "Failed to create config".to_string())?;
 
     // Write default config
     let writer = BufWriter::new(file);
@@ -47,7 +47,7 @@ pub fn create_config() -> Result<Config, String> {
     };
 
     serde_json::to_writer_pretty(writer, &config)
-        .map_err(|_| "Failed to create config file".to_string())?;
+        .map_err(|_| "Failed to create config".to_string())?;
 
     Ok(config)
 }
@@ -66,13 +66,7 @@ pub fn get_config(key: ConfigKey) -> Result<String, String> {
 
     // Return value for the key
     match key {
-        ConfigKey::Gateway => {
-            if config.gateway.is_empty() {
-                Err("Gateway config not set".to_string())
-            } else {
-                Ok(config.gateway.clone())
-            }
-        },
+        ConfigKey::Gateway => Ok(config.gateway.clone())
     }
 }
 

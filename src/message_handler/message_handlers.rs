@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::{collections::HashMap, net::TcpStream};
 
 use crate::message_handler::message_types::{Command, ConnectAck, QueryCodebase};
-use crate::message_handler::reply_types::{ReplyType, CodeContext};
+use crate::message_handler::reply_types::{CodeContext, MessageError, ReplyType};
 use crate::operations;
 
 // Regular ping message
@@ -13,6 +13,19 @@ pub fn handle_ping(message: Bytes, socket: &mut WebSocket<MaybeTlsStream<TcpStre
     socket.send(Message::Text("pong".into())).expect("Pong to server failed");
 
     println!("Ping recieved..Sending heartbeat..  ˗ˋˏ ♡ ˎˊ˗");
+}
+
+// Invalid message handler
+pub fn handle_invalid_message(socket: &mut WebSocket<MaybeTlsStream<TcpStream>>){
+    let response = MessageError {
+        status: false,
+        reply_type: ReplyType::MessageError,
+        error: "Invalid json recieved".to_string()
+    };
+
+    let response_text = serde_json::to_string(&response).unwrap();
+
+    socket.send(Message::Text(response_text.into())).unwrap();
 }
 
 // Initial connection acknowledgement
