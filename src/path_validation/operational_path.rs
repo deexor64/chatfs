@@ -9,8 +9,8 @@ pub struct OperationalPath {
 
 #[derive(PartialEq)]
 pub enum ExpectedType {
-    File,
-    Dir,
+    File, // Imply exists
+    Dir,  // Imply exists
     AnyExist,
     AnyNonExist
 }
@@ -71,7 +71,7 @@ impl OperationalPath {
         })
     }
 
-    /// Ensure path is inside workspace
+    // Ensure path is inside workspace
     pub fn within_workspace(self) -> Result<Self, String> {
         if !self.resolved_path.starts_with(&self.workspace) {
             return Err(format!(
@@ -82,8 +82,8 @@ impl OperationalPath {
         Ok(self)
     }
 
-    /// Reject or allow root access
-    /// Is not effective with ExpectedType::File
+    // Reject or allow root access
+    // Is not effective with ExpectedType::File
     pub fn no_direct_root(self) -> Result<Self, String> {
         let root_requested =
             self.original_path.as_os_str().is_empty()
@@ -99,7 +99,7 @@ impl OperationalPath {
         Ok(self)
     }
 
-    /// Validate expected type
+    // Validate expected type
     pub fn expect_type(self, expected: ExpectedType) -> Result<Self, String> {
         match expected {
             ExpectedType::File => {
@@ -146,7 +146,7 @@ impl OperationalPath {
         Ok(self)
     }
 
-    /// Apply ignore rules
+    // Apply ignore rules
     pub fn ignore_rules(self, matcher: &Gitignore) -> Result<Self, String> {
         let is_dir = self.resolved_path.is_dir();
 
@@ -161,7 +161,7 @@ impl OperationalPath {
         Ok(self)
     }
 
-    /// Extract final usable path
+    // Extract final usable path
     pub fn build(self) -> PathBuf {
         self.resolved_path
     }
