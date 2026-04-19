@@ -11,7 +11,7 @@ use directories::BaseDirs;
  */
 const DATA_DIR_NAME: &str = ".chatfs";
 
-pub fn get_data_dir() -> Result<PathBuf, String> {
+pub fn ensure_data_dir() -> Result<PathBuf, String> {
     // Determine the environment mode
     let mode = env::var("MODE").unwrap_or_else(|_| "".to_string());
 

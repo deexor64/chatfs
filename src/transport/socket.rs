@@ -1,9 +1,9 @@
 use std::time::Duration;
 use tungstenite::{Message, connect};
 
-use crate::logger;
-use crate::message_handler::message_handlers::{handle_connect_ack, handle_invalid_message, handle_ping, handle_query_codebase};
-use crate::message_handler::message_types::{ConnectAck, QueryCodebase};
+use crate::utils::logger;
+use crate::transport::handlers::{handle_connect_ack, handle_invalid_message, handle_ping, handle_query_codebase};
+use crate::transport::types::message_types::{ConnectAck, QueryCodebase};
 
 const MAX_LISTEN_RETRIES: usize = 5;
 

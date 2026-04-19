@@ -1,7 +1,7 @@
 use std::{fs::File, io::BufWriter, path::PathBuf, sync::RwLock};
 
-use crate::path_validation::data_dir::{get_data_dir};
-use crate::tool_config::config_types::{ConfigKey, Config};
+use super::data_dir::{ensure_data_dir};
+use super::types::{ConfigKey, Config};
 
 
 // In memory cache for the config
@@ -96,6 +96,6 @@ pub fn set_config(key: ConfigKey, value: String) -> Result<(), String> {
 
 // Helper to get the path to the config file
 fn get_config_file() -> Result<PathBuf, String> {
-    let data_dir = get_data_dir()?;
+    let data_dir = ensure_data_dir()?;
     Ok(data_dir.join("config.json"))
 }

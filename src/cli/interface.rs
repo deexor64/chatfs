@@ -1,10 +1,10 @@
 use clap::{Parser};
 
-use crate::cli_handler::cli_types::{Cli, Commands};
-use crate::message_handler::socket_loop::socket_loop;
-use crate::tool_config::config::{create_config, ensure_config, get_config, save_config_cache, set_config};
-use crate::tool_config::config_types::ConfigKey;
-use crate::logger;
+use super::types::{Cli, Commands};
+use crate::transport::socket::socket_loop;
+use crate::config::loader::{create_config, ensure_config, get_config, save_config_cache, set_config};
+use crate::config::types::ConfigKey;
+use crate::utils::logger;
 
 
 pub fn cli_handler() -> Result<(), String>{
@@ -62,7 +62,7 @@ pub fn cli_handler() -> Result<(), String>{
             return Ok(());
         },
         None => {
-            // TODO: Add tool notice
+            // TODO: Update tool notice
             println!("Tool notice: use 'run' command");
             return Ok(())
         }

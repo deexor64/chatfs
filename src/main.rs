@@ -1,7 +1,7 @@
 use dotenv::dotenv;
 
-use chatfs::cli_handler::cli_handler::cli_handler;
-use chatfs::logger::log_error;
+use chatfs::cli::interface::cli_handler;
+use chatfs::utils::logger::log_error;
 use std::process::exit;
 
 fn main() {

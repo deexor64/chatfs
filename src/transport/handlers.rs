@@ -3,10 +3,10 @@ use tungstenite::{Bytes, Message, WebSocket, stream::MaybeTlsStream};
 use std::path::PathBuf;
 use std::{collections::HashMap, net::TcpStream};
 
-use crate::logger;
-use crate::message_handler::message_types::{Command, ConnectAck, QueryCodebase};
-use crate::message_handler::reply_types::{CodeContext, MessageError, ReplyType};
-use crate::operations;
+use super::types::message_types::{Command, ConnectAck, QueryCodebase};
+use super::types::reply_types::{CodeContext, MessageError, ReplyType};
+use crate::fs::operations;
+use crate::utils::logger;
 
 fn find_ignore_file() -> Option<PathBuf> {
     let candidates = [".qsignore", ".fsignore", ".gitignore"];

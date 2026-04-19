@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::tool_config::config_types::ConfigKey;
+use crate::config::types::ConfigKey;
 
 #[derive(Parser)]
 #[command(version, about)]

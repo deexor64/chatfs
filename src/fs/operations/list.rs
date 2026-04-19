@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 use std::{collections::HashMap, path::{Path, PathBuf}};
 
-use crate::path_validation::operational_path::{ExpectedType, OperationalPath};
+use super::super::safe_path::{ExpectedType, SafePath};
 
 #[derive(Serialize)]
 struct Node {
@@ -29,7 +29,7 @@ pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) -> 
         None => return json!({"status": false, "error": "Missing or invalid 'path' parameter"}),
     };
 
-    let _op_path = OperationalPath::from(PathBuf::from(_path))
+    let _op_path = SafePath::from(PathBuf::from(_path))
         .and_then(|p| p.within_workspace())
         .and_then(|p| p.expect_type(ExpectedType::Dir));
 

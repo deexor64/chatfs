@@ -1,7 +1,7 @@
 use std::{env, path::{Path, PathBuf}};
 use ignore::gitignore::Gitignore;
 
-pub struct OperationalPath {
+pub struct SafePath {
     original_path: PathBuf,
     resolved_path: PathBuf,
     workspace: PathBuf,
@@ -24,7 +24,7 @@ pub enum ExpectedType {
  * Prevents directory traversal and access to paths outside the workspace scope
  * ISSUE: Symlinked directories can still give access to outside via canonicalization
  */
-impl OperationalPath {
+impl SafePath {
     pub fn from(path: PathBuf) -> Result<Self, String> {
         let work_dir = env::current_dir()
             .map_err(|_| "Failed to determine current working directory (client side error)".to_string())?;

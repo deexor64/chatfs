@@ -4,8 +4,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 
-use crate::path_validation::ignore_rules::{build_matcher};
-use crate::path_validation::operational_path::{ExpectedType, OperationalPath};
+use super::super::ignore::{build_matcher};
+use super::super::safe_path::{ExpectedType, SafePath};
 
 
 pub fn write(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) -> Value {
@@ -26,7 +26,7 @@ pub fn write(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) ->
         None => return json!({"status": false, "error": "Missing or invalid 'path' parameter"}),
     };
 
-    let mut op_path = OperationalPath::from(PathBuf::from(_path))
+    let mut op_path = SafePath::from(PathBuf::from(_path))
         .and_then(|p| p.within_workspace())
         .and_then(|p| p.no_direct_root())
         .and_then(|p| p.expect_type(ExpectedType::File));
