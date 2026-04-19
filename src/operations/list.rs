@@ -13,15 +13,21 @@ struct Node {
     children: Option<Vec<Node>>,
 }
 
-pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&str>) -> Value {
-    let recursive = queries.get("recursive")
-        .and_then(|v| v.as_bool()).unwrap();
+pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) -> Value {
+    let recursive = match queries.get("recursive").and_then(|v| v.as_bool()) {
+        Some(value) => value,
+        None => return json!({"status": false, "error": "Missing or invalid 'recursive' parameter"}),
+    };
 
-    let item_type = queries.get("item_type")
-        .and_then(|v| v.as_str()).unwrap();
+    let item_type = match queries.get("item_type").and_then(|v| v.as_str()) {
+        Some(value) => value,
+        None => return json!({"status": false, "error": "Missing or invalid 'item_type' parameter"}),
+    };
 
-    let _path = queries.get("path")
-        .and_then(|v| v.as_str()).unwrap();
+    let _path = match queries.get("path").and_then(|v| v.as_str()) {
+        Some(value) => value,
+        None => return json!({"status": false, "error": "Missing or invalid 'path' parameter"}),
+    };
 
     let _op_path = OperationalPath::from(PathBuf::from(_path))
         .and_then(|p| p.within_workspace())

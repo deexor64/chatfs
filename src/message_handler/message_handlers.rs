@@ -3,16 +3,34 @@ use tungstenite::{Bytes, Message, WebSocket, stream::MaybeTlsStream};
 use std::path::PathBuf;
 use std::{collections::HashMap, net::TcpStream};
 
+use crate::logger;
 use crate::message_handler::message_types::{Command, ConnectAck, QueryCodebase};
 use crate::message_handler::reply_types::{CodeContext, MessageError, ReplyType};
 use crate::operations;
 
+fn find_ignore_file() -> Option<PathBuf> {
+    let candidates = [".qsignore", ".fsignore", ".gitignore"];
+    for file in candidates {
+        let path = PathBuf::from(file);
+        if path.exists() {
+            return Some(path);
+        }
+    }
+    None
+}
+
 // Regular ping message
 pub fn handle_ping(message: Bytes, socket: &mut WebSocket<MaybeTlsStream<TcpStream>>){
-    socket.send(Message::Pong(message)).expect("Pong to failed");
-    socket.send(Message::Text("pong".into())).expect("Pong to server failed");
-
     println!("Ping recieved..Sending heartbeat..  ˗ˋˏ ♡ ˎˊ˗");
+
+    if let Err(err) = socket.send(Message::Pong(message)) {
+        logger::log_warn(format!("Failed to send pong: {}", err));
+    }
+
+    if let Err(err) = socket.send(Message::Text("pong".into())) {
+        // Do not remove this. The client object at server expects this text version of pong to expire the client object
+        logger::log_warn(format!("Failed to send pong: {}", err));
+    }
 }
 
 // Invalid message handler
@@ -54,22 +72,16 @@ pub fn handle_query_codebase(message: QueryCodebase, socket: &mut WebSocket<Mayb
     let queries: HashMap<String, Value> = message.queries;
     let context: Value;
 
-    // Ignore file
-    // ISSUE: Doesn't work
-    let ignorefile = if PathBuf::from(".qsignore").exists() {
-            Some(".qsignore")
-        } else {
-            None
-        };
+    let ignore_file = find_ignore_file();
 
     match message.command {
-        Command::List => context = operations::list::list(&queries, ignorefile),
-        Command::Content => context = operations::content::content(&queries, ignorefile),
-        Command::Create => context = operations::create::create(&queries, ignorefile),
-        Command::Copy => context = operations::copy::copy(&queries, ignorefile),
-        Command::Move => context = operations::mv::mv(&queries, ignorefile),
-        Command::Delete => context = operations::delete::delete(&queries, ignorefile),
-        Command::Write => context = operations::write::write(&queries, ignorefile),
+        Command::List => context = operations::list::list(&queries, ignore_file.as_ref()),
+        Command::Content => context = operations::content::content(&queries, ignore_file.as_ref()),
+        Command::Create => context = operations::create::create(&queries, ignore_file.as_ref()),
+        Command::Copy => context = operations::copy::copy(&queries, ignore_file.as_ref()),
+        Command::Move => context = operations::mv::mv(&queries, ignore_file.as_ref()),
+        Command::Delete => context = operations::delete::delete(&queries, ignore_file.as_ref()),
+        Command::Write => context = operations::write::write(&queries, ignore_file.as_ref()),
     }
 
     let response = CodeContext {

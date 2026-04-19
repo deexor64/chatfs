@@ -3,18 +3,26 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+use crate::path_validation::ignore_rules::{build_matcher};
 use crate::path_validation::operational_path::{ExpectedType, OperationalPath};
 
-pub fn delete(queries: &HashMap<String, Value>, _ignore_file: Option<&str>) -> Value {
-    let _path = queries.get("path")
-        .and_then(|v| v.as_str()).unwrap();
+pub fn delete(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) -> Value {
+    let _path = match queries.get("path").and_then(|v| v.as_str()) {
+        Some(value) => value,
+        None => return json!({"status": false, "error": "Missing or invalid 'path' parameter"}),
+    };
 
-    let _op_path = OperationalPath::from(PathBuf::from(_path))
+    let mut op_path = OperationalPath::from(PathBuf::from(_path))
         .and_then(|p| p.within_workspace())
         .and_then(|p| p.no_direct_root())
         .and_then(|p| p.expect_type(ExpectedType::AnyExist));
 
-    let path = match _op_path {
+    if let Some(ignore) = ignore_file {
+        let matcher = build_matcher(ignore, &std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+        op_path = op_path.and_then(|p| p.ignore_rules(&matcher));
+    }
+
+    let path = match op_path {
         Ok(op) => op.build(),
         Err(e) => return json!({"status": false, "error": format!("path: {}", e)})
     };
