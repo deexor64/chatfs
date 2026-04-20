@@ -1,18 +1,17 @@
-use std::{fs::File, io::BufWriter, path::PathBuf, sync::RwLock};
+use std::{fs::File, io::BufWriter, sync::OnceLock};
 
-use super::data_dir::{ensure_data_dir};
+use super::config_path::get_config_path;
 use super::types::{ConfigKey, Config};
 
 
 // In memory cache for the config
-static CONFIG: RwLock<Option<Config>> = RwLock::new(None);
+static CONFIG: OnceLock<Config> = OnceLock::new();
 
 /*
- * Ensures a valid config file exists and returns the config
- * Always results in an error if the config file does not exist or is invalid
+ * Ensures a valid config file exists and returns the full config
  */
-pub fn ensure_config() -> Result<Config, String> {
-    let config_file = get_config_file()?;
+fn read_config() -> Result<Config, String> {
+    let config_file = get_config_path()?;
 
     if !config_file.exists() {
         return Err("Config not found".to_string())
@@ -29,73 +28,65 @@ pub fn ensure_config() -> Result<Config, String> {
 }
 
 /*
- * Creates a new config file with default values
+ * Creates a new config file with a given config
  * Any existing config file will be overwritten
- * This must only be called when a valid config file does not already exist
+ * Therefore full config must be provided
  */
-pub fn create_config() -> Result<Config, String> {
-    let config_file = get_config_file()?;
+fn save_config(config: Config) -> Result<(), String> {
+    let config_file = get_config_path()?;
 
-    // Attempt to create new config file
+    // Attempt to create a new config file
     let file = File::create(config_file).map_err(|_| "Failed to create config".to_string())?;
 
-    // Write default config
+    // Write config
     let writer = BufWriter::new(file);
-
-    let config = Config {
-        gateway: "".to_string()
-    };
 
     serde_json::to_writer_pretty(writer, &config)
         .map_err(|_| "Failed to create config".to_string())?;
 
-    Ok(config)
-}
-
-// Update config cache from the given config
-pub fn save_config_cache(config: Config) -> Result<(), String> {
-    let mut conf_w = CONFIG.write().map_err(|_| "Failed to save config cache".to_string())?;
-    *conf_w = Some(config);
     Ok(())
 }
 
+// Save default config to the config file
+pub fn save_default_config() -> Result<(), String> {
+    let config = Config {
+        gateway: "".to_string()
+    };
+
+    save_config(config)
+}
+
+// Update config cache from the config file
+pub fn save_config_cache() -> Result<(), String> {
+    let config = read_config()?;
+
+    CONFIG.set(config.clone()).map_err(|_| "Failed to save config cache".to_string())?;
+    Ok(())
+}
+
+
+
 // Retrieve the value for the given config key from the cache
 pub fn get_config(key: ConfigKey) -> Result<String, String> {
-    let guard = CONFIG.read().map_err(|_| "Failed to read config".to_string())?;
-    let config = guard.as_ref().ok_or("Failed to read config".to_string())?;
+    let config = CONFIG.get().ok_or("Config not initialized".to_string())?;
 
-    // Return value for the key
     match key {
         ConfigKey::Gateway => Ok(config.gateway.clone())
     }
 }
 
-// Set the value for the given config key to the cache and update config file
+
+// Set the value for the given config key to the config file
+// Config cache is not updated here, becuase run time mutation is not allowed
+// This must only be invoked from a CLI command
 pub fn set_config(key: ConfigKey, value: String) -> Result<(), String> {
-    // Write to cache
-    let mut guard = CONFIG.write().map_err(|_| "Failed to write config".to_string())?;
-    let config = guard.as_mut().ok_or("Failed to write config".to_string())?;
+    let mut config = read_config()?;
 
     match key {
-        ConfigKey::Gateway => {
-            config.gateway = value.to_string();
-        },
+        ConfigKey::Gateway => config.gateway = value,
     }
 
-    // Write to config file
-    let config_file = get_config_file()?;
-
-    let file = File::create(config_file).map_err(|_| "Failed to create config file".to_string())?; // Fresh file
-    let writer = BufWriter::new(file);
-
-    serde_json::to_writer_pretty(writer, &config)
-        .map_err(|_| "Failed to create config file".to_string())?;
+    save_config(config)?;
 
     Ok(())
-}
-
-// Helper to get the path to the config file
-fn get_config_file() -> Result<PathBuf, String> {
-    let data_dir = ensure_data_dir()?;
-    Ok(data_dir.join("config.json"))
 }

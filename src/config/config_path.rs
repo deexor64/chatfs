@@ -11,7 +11,7 @@ use directories::BaseDirs;
  */
 const DATA_DIR_NAME: &str = ".chatfs";
 
-pub fn ensure_data_dir() -> Result<PathBuf, String> {
+fn ensure_data_dir() -> Result<PathBuf, String> {
     // Determine the environment mode
     let mode = env::var("MODE").unwrap_or_else(|_| "".to_string());
 
@@ -41,4 +41,9 @@ pub fn ensure_data_dir() -> Result<PathBuf, String> {
     }
 
     Ok(data_dir)
+}
+
+pub fn get_config_path() -> Result<PathBuf, String> {
+    let data_dir = ensure_data_dir()?;
+    Ok(data_dir.join("config.json"))
 }

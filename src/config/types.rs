@@ -9,5 +9,5 @@ pub enum ConfigKey {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub gateway: String,
-    // TODO: Add few other config options
+    // Other options goes here
 }

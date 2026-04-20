@@ -2,7 +2,7 @@ use clap::{Parser};
 
 use super::types::{Cli, Commands};
 use crate::transport::socket::socket_loop;
-use crate::config::loader::{create_config, ensure_config, get_config, save_config_cache, set_config};
+use crate::config::loader::{save_config_cache, set_config, get_config};
 use crate::config::types::ConfigKey;
 use crate::utils::logger;
 
@@ -11,28 +11,13 @@ pub fn cli_handler() -> Result<(), String>{
     let cli = Cli::parse();
 
     // Ensure config exists
-    let config = ensure_config();
+    let config = save_config_cache();
 
-    match config {
-        Ok(config) => {
-            save_config_cache(config)?;
-        },
-        Err(e) => {
-            logger::log_warn(e);
-            logger::log_info("Creating a new config...".to_string());
-
-            let config = create_config();
-
-            match config {
-                Ok(config) => {
-                    save_config_cache(config)?;
-                },
-                Err(e) => {
-                    logger::log_error(e.clone());
-                    return Err(e);
-                }
-            }
-        }
+    if let Err(e) = config {
+        logger::log_warn(e);
+        logger::log_info("Creating a new config...".to_string());
+        
+        crate::config::loader::save_default_config()?;
     }
 
     match cli.command {
