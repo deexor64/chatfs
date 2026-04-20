@@ -5,7 +5,7 @@ use super::types::{ConfigKey, Config};
 
 
 // In memory cache for the config
-static CONFIG: OnceLock<Config> = OnceLock::new();
+static CONFIG_CACHE: OnceLock<Config> = OnceLock::new();
 
 /*
  * Ensures a valid config file exists and returns the full config
@@ -60,7 +60,7 @@ pub fn save_default_config() -> Result<(), String> {
 pub fn save_config_cache() -> Result<(), String> {
     let config = read_config()?;
 
-    CONFIG.set(config.clone()).map_err(|_| "Failed to save config cache".to_string())?;
+    CONFIG_CACHE.set(config.clone()).map_err(|_| "Failed to save config cache".to_string())?;
     Ok(())
 }
 
@@ -68,7 +68,7 @@ pub fn save_config_cache() -> Result<(), String> {
 
 // Retrieve the value for the given config key from the cache
 pub fn get_config(key: ConfigKey) -> Result<String, String> {
-    let config = CONFIG.get().ok_or("Config not initialized".to_string())?;
+    let config = CONFIG_CACHE.get().ok_or("Config not initialized".to_string())?;
 
     match key {
         ConfigKey::Gateway => Ok(config.gateway.clone())

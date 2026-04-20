@@ -16,7 +16,10 @@ pub fn socket_loop(gateway: String) -> Result<(), String> {
 
     // Connect to socket
     let (mut socket, _response) = connect(&gateway).map_err(|_| "Failed to connect gateway (check gateway url using 'config-get gateway')".to_string())?;
-    logger::log_info(format!("Connected to gateway ({})", gateway));
+    logger::log_debug(format!("Connected to gateway ({})", gateway));
+
+    let work_dir = std::env::current_dir().map_err(|_| "Failed to get current directory".to_string())?;
+    logger::log_debug(format!("Started sharing workspace ({})", work_dir.display()));
 
     // Listen to messages
     let mut retry_count = 0;

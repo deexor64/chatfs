@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 use crate::config::types::ConfigKey;
@@ -19,10 +21,16 @@ pub enum Commands {
         key: ConfigKey,
     },
     Run {
-        #[arg(long)]
-        no_logging: bool,
+        #[arg(value_name = "PATH")]
+        path: Option<PathBuf>,
 
         #[arg(short, long)]
         gateway: Option<String>,
+
+        #[arg(long, conflicts_with = "debug")]
+        no_logging: bool,
+
+        #[arg(long, conflicts_with = "no_logging")]
+        debug: bool
     }
 }
