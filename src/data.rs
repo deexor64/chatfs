@@ -1,21 +1,26 @@
 use std::{env, fs, path::PathBuf};
+use std::sync::OnceLock;
 use directories::BaseDirs;
 
 /*
- * Get the data directory for the application.
- * Directory location is determined by the environment mode.
- *   - `dev`: current directory
- *   - `prod` or else: user's home directory
- * New directory is created if it does not exist.
- * Always returns a canonical path.
+ * Returns the data directory for the application depending on the environment mode
+ * - `dev`: current directory
+ * - `prod` or else: user's home directory
  */
 const DATA_DIR_NAME: &str = ".chatfs";
+static DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
 
-fn ensure_data_dir() -> Result<PathBuf, String> {
-    // Determine the environment mode
+pub fn ensure_data_dir() -> Result<PathBuf, String> {
+    // Data dir already initialized, return cached value
+    if let Some(data_dir) = DATA_DIR.get() {
+        return Ok(data_dir.into());
+    }
+
+    // Subsequent code will only be executed once
+
+    // Determining directory location based on environment mode
     let mode = env::var("MODE").unwrap_or_else(|_| "".to_string());
 
-    // Directory location
     let user_dir: PathBuf = if mode == "dev" {
         env::current_dir()
             .map_err(|_| "Failed to determine user directory".to_string())?
@@ -40,10 +45,17 @@ fn ensure_data_dir() -> Result<PathBuf, String> {
             .map_err(|_| "Failed to create data directory".to_string())?;
     }
 
+    DATA_DIR.set(PathBuf::from(data_dir.clone())).ok();
     Ok(data_dir)
 }
 
+
+/*
+ * Returns the path to the config file with the data directory
+ */
+const CONFIG_FILE_NAME: &str = "config.json";
+
 pub fn get_config_path() -> Result<PathBuf, String> {
     let data_dir = ensure_data_dir()?;
-    Ok(data_dir.join("config.json"))
+    Ok(data_dir.join(CONFIG_FILE_NAME))
 }

@@ -1,3 +1,2 @@
-pub mod loader;
+pub mod manager;
 pub mod types;
-pub mod config_path;

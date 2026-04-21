@@ -1,3 +1,4 @@
+use std::sync::OnceLock;
 use std::time::Duration;
 use tungstenite::{Message, connect};
 
@@ -5,21 +6,30 @@ use crate::utils::logger;
 use crate::transport::handlers::{handle_connect_ack, handle_invalid_message, handle_ping, handle_query_codebase};
 use crate::transport::types::message_types::{ConnectAck, QueryCodebase};
 
+static GATEWAY: OnceLock<String> = OnceLock::new();
 const MAX_LISTEN_RETRIES: usize = 5;
 
-pub fn socket_loop(gateway: String) -> Result<(), String> {
+pub fn set_gateway(url: String) {
+    GATEWAY.set(url).unwrap();
+}
+
+pub fn get_gateway() -> Option<String> {
+    GATEWAY.get().cloned()
+}
+
+pub fn socket_loop() -> Result<(), String> {
     // Gateway not set
+    let gateway = get_gateway().unwrap_or("".to_string());
+
     if gateway.is_empty() {
-        logger::log_info("Gateway url is not set (use 'config-set gateway <URL>' or '--gateway <URL>' to set)".to_string());
+        logger::log_info("Gateway url is not set or an empty url is provided (use 'config-set gateway <URL>' or '--gateway <URL>' to set)".to_string());
         return Ok(());
     }
 
     // Connect to socket
     let (mut socket, _response) = connect(&gateway).map_err(|_| "Failed to connect gateway (check gateway url using 'config-get gateway')".to_string())?;
-    logger::log_debug(format!("Connected to gateway ({})", gateway));
-
-    let work_dir = std::env::current_dir().map_err(|_| "Failed to get current directory".to_string())?;
-    logger::log_debug(format!("Started sharing workspace ({})", work_dir.display()));
+    logger::log_debug("Connected to gateway".to_string());
+    logger::log_debug("Started sharing workspace".to_string());
 
     // Listen to messages
     let mut retry_count = 0;

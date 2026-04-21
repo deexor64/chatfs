@@ -1,8 +1,7 @@
 use dotenv::dotenv;
 
 use chatfs::cli::interface::cli_handler;
-use chatfs::utils::logger::log_error;
-use std::process::exit;
+use chatfs::transport::socket::socket_loop;
 
 fn main() {
     // Load environment variables
@@ -10,7 +9,11 @@ fn main() {
 
     // Start CLI handler
     if let Err(e) = cli_handler() {
-        log_error(e);
-        exit(1);
+        panic!("{}", e);
+    }
+
+    // Start socket loop
+    if let Err(e) = socket_loop() {
+        panic!("{}", e);
     }
 }

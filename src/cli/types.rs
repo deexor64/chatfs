@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-
 use clap::{Parser, Subcommand};
 
 use crate::config::types::ConfigKey;
@@ -8,7 +7,13 @@ use crate::config::types::ConfigKey;
 #[command(version, about)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Option<Commands>
+    pub command: Option<Commands>,
+
+    #[arg(long, conflicts_with = "debug")]
+    pub no_logging: bool,
+
+    #[arg(long, conflicts_with = "no_logging")]
+    pub debug: bool
 }
 
 #[derive(Subcommand)]
@@ -22,15 +27,9 @@ pub enum Commands {
     },
     Run {
         #[arg(value_name = "PATH")]
-        path: Option<PathBuf>,
+        workspace: Option<PathBuf>,
 
         #[arg(short, long)]
         gateway: Option<String>,
-
-        #[arg(long, conflicts_with = "debug")]
-        no_logging: bool,
-
-        #[arg(long, conflicts_with = "no_logging")]
-        debug: bool
     }
 }
