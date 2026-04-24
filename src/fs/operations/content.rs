@@ -5,7 +5,7 @@ use super::super::ignore::{build_matcher};
 use super::super::safe_path::{ExpectedType, SafePath};
 
 
-pub fn content(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) -> Value {
+pub fn content(queries: &HashMap<String, String>) -> Result<ExecutionResult, String> {
     let lines = match queries.get("lines").and_then(|v| v.as_str()) {
         Some(value) => value,
         None => return json!({"status": false, "error": "Missing or invalid 'lines' parameter"}),

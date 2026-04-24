@@ -7,7 +7,7 @@ use super::super::ignore::{build_matcher};
 use super::super::safe_path::{ExpectedType, SafePath};
 
 
-pub fn create(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) -> Value {
+pub fn create(queries: &HashMap<String, String>) -> Result<ExecutionResult, String> {
     let item_type = match queries.get("item_type").and_then(|v| v.as_str()) {
         Some(value) => value,
         None => return json!({"status": false, "error": "Missing or invalid 'item_type' parameter"}),

@@ -7,7 +7,7 @@ use super::super::ignore::{build_matcher};
 use super::super::safe_path::{ExpectedType, SafePath};
 
 // Function is name 'mv' becuase 'move' is a rust reserved keyword
-pub fn mv(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) -> Value {
+pub fn mv(queries: &HashMap<String, String>) -> Result<ExecutionResult, String> {
     let _path = match queries.get("path").and_then(|v| v.as_str()) {
         Some(value) => value,
         None => return json!({"status": false, "error": "Missing or invalid 'path' parameter"}),

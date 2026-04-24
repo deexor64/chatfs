@@ -1,3 +1,7 @@
 /target
 .env
 .chatfs/
+
+llm_ops
+notice.html
+README.md

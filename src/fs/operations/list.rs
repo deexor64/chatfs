@@ -13,7 +13,7 @@ struct Node {
     children: Option<Vec<Node>>,
 }
 
-pub fn list(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) -> Value {
+pub fn list(queries: &HashMap<String, String>) -> Result<ExecutionResult, String> {
     let recursive = match queries.get("recursive").and_then(|v| v.as_bool()) {
         Some(value) => value,
         None => return json!({"status": false, "error": "Missing or invalid 'recursive' parameter"}),

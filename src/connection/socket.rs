@@ -2,12 +2,11 @@ use std::sync::OnceLock;
 use std::time::Duration;
 use tungstenite::{Message, connect};
 
+use super::types::{ConnectSyn, Ping, LlmCommand};
+use super::handlers::{handle_connect_syn, handle_ping, handle_llm_command};
 use crate::utils::logger;
-use crate::transport::handlers::{handle_connect_ack, handle_invalid_message, handle_ping, handle_query_codebase};
-use crate::transport::types::message_types::{ConnectAck, QueryCodebase};
 
 static GATEWAY: OnceLock<String> = OnceLock::new();
-const MAX_LISTEN_RETRIES: usize = 5;
 
 pub fn set_gateway(url: String) {
     GATEWAY.set(url).unwrap();
@@ -16,6 +15,8 @@ pub fn set_gateway(url: String) {
 pub fn get_gateway() -> Option<String> {
     GATEWAY.get().cloned()
 }
+
+const MAX_LISTEN_RETRIES: usize = 5;
 
 pub fn socket_loop() -> Result<(), String> {
     // Gateway not set
@@ -41,33 +42,50 @@ pub fn socket_loop() -> Result<(), String> {
 
         match socket.read() {
             Ok(message) => {
+
                 retry_count = 0;
+
                 match message {
-                    Message::Ping(msg) => handle_ping(msg, &mut socket),
                     Message::Close(_) => {
-                        logger::log_warn("Gateway closed the connection".to_string());
-                        return Err("Connection closed by gateway".to_string());
-                    }
+                        logger::log_warn("Connection closed by gateway".to_string());
+                        return Ok(());
+                    },
                     Message::Text(msg) => {
-                        if let Ok(parsed) = serde_json::from_str::<ConnectAck>(&msg) {
-                            handle_connect_ack(parsed);
-                        } else if let Ok(parsed) = serde_json::from_str::<QueryCodebase>(&msg) {
-                            handle_query_codebase(parsed, &mut socket);
+                        if let Ok(parsed) = serde_json::from_str::<ConnectSyn>(&msg) {
+                            if let Err(e) = handle_connect_syn(parsed, &mut socket) {
+                                logger::log_error(e);
+                            }
+
+                        } else if let Ok(_) = serde_json::from_str::<Ping>(&msg) {
+                            if let Err(e) = handle_ping(&mut socket) {
+                                logger::log_error(e);
+                            }
+
+                        } else if let Ok(parsed) = serde_json::from_str::<LlmCommand>(&msg) {
+                            if let Err(e) = handle_llm_command(parsed, &mut socket) {
+                                logger::log_error(e);
+                            }
+
                         } else {
-                            handle_invalid_message(&mut socket);
+                            logger::log_warn("Invalid message ignored".to_string());
+
                         }
-                    }
+                    },
                     Message::Binary(_) => {
-                        logger::log_warn("Received unsupported binary message".to_string());
-                    }
+                        logger::log_warn("Unsupported binary message ignored".to_string());
+                    },
                     _ => {}
                 }
-            }
+            },
             Err(err) => {
                 retry_count += 1;
                 logger::log_warn(format!("Failed to read message: {} (retry attempt {} of {})", err, retry_count, MAX_LISTEN_RETRIES));
+
+                // Wait before retrying
                 std::thread::sleep(Duration::from_secs(1));
                 let (new_socket, _) = connect(&gateway).map_err(|_| "Failed to reconnect gateway".to_string())?;
+
+                // Update socket
                 socket = new_socket;
             }
         }

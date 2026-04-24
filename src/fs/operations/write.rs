@@ -8,7 +8,7 @@ use super::super::ignore::{build_matcher};
 use super::super::safe_path::{ExpectedType, SafePath};
 
 
-pub fn write(queries: &HashMap<String, Value>, ignore_file: Option<&PathBuf>) -> Value {
+pub fn write(queries: &HashMap<String, String>) -> Result<ExecutionResult, String> {
     let lines = queries.get("lines")
         .and_then(|v| v.as_str())
         .unwrap_or("1-*");

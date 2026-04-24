@@ -5,7 +5,7 @@ use crate::data::ensure_data_dir;
 use super::types::{Cli, Commands};
 use crate::config::manager::{get_config, load_config_cache, save_default_config, set_config};
 use crate::config::types::ConfigKey;
-use crate::transport::socket::set_gateway;
+use crate::connection::socket::set_gateway;
 use crate::utils::logger;
 
 
@@ -61,9 +61,7 @@ pub fn cli_handler() -> Result<(), String>{
                     logger::log_info("Config updated".to_string());
                     exit(0);
                 },
-                Err(e) => {
-                    panic!("{}", e);
-                }
+                Err(e) => return Err(e),
             }
         },
         Some(Commands::GetConfig { key }) => {
@@ -72,9 +70,7 @@ pub fn cli_handler() -> Result<(), String>{
                     println!("{}", value);
                     exit(0);
                 },
-                Err(e) => {
-                    panic!("{}", e);
-                }
+                Err(e) => return Err(e),
             }
         },
         Some(Commands::Run { workspace, gateway }) => {

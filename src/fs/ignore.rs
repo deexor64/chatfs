@@ -1,5 +1,33 @@
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use std::path::{Path, PathBuf};
+use std::{fs, path::{Path, PathBuf}};
+
+/*
+ * Search for ignore file in the working directory
+ * By default, use .chatignore if it exists, otherwise copy .gitignore to .chatignore
+ * If neither exists, return None
+ */
+const IGNORE_FILE_NAME: &str = ".chatignore";
+
+fn ensure_ignore_file() -> Option<PathBuf> {
+    let path = PathBuf::from(IGNORE_FILE_NAME);
+
+    // Return existing ignore file if it exists
+    if path.exists() {
+        return Some(path);
+    }
+
+    // Create a new ignore file if gitignore exists
+    // Copy .gitignore to new ignore file
+    if PathBuf::from(".gitignore").exists() {
+        let gitignore_content = fs::read_to_string(&PathBuf::from(".gitignore")).ok();
+
+        if let Some(content) = gitignore_content {
+            fs::write(&path, content).ok();
+        }
+    }
+
+    None
+}
 
 /*
  * Checks whether a given path should be ignored based on ignorefile
