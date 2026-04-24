@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use serde_json::Value;
 
 #[derive(Debug, Deserialize)]
 pub enum Command {
@@ -17,9 +16,4 @@ pub enum Command {
     Delete,
     #[serde(rename = "write")]
     Write
-}
-
-pub struct ExecutionResult {
-    pub status: bool,
-    pub result: Value,
 }

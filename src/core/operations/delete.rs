@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use super::super::ignore::{build_matcher};
 use super::super::safe_path::{ExpectedType, SafePath};
 
-pub fn delete(queries: &HashMap<String, String>) -> Result<ExecutionResult, String> {
+pub fn delete(queries: &HashMap<String, String>) -> Result<Value, String> {
     let _path = match queries.get("path").and_then(|v| v.as_str()) {
         Some(value) => value,
         None => return json!({"status": false, "error": "Missing or invalid 'path' parameter"}),

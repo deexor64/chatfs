@@ -1,5 +1,7 @@
 use std::{env, path::{Path, PathBuf}};
-use ignore::gitignore::Gitignore;
+use ignore::gitignore::{GitignoreBuilder};
+
+use crate::core::validators::utils::ignore_file::ensure_ignore_file;
 
 pub struct SafePath {
     original_path: PathBuf,
@@ -27,7 +29,7 @@ pub enum ExpectedType {
 impl SafePath {
     pub fn from(path: PathBuf) -> Result<Self, String> {
         let work_dir = env::current_dir()
-            .map_err(|_| "Failed to determine current working directory (client side error)".to_string())?;
+            .map_err(|_| "Failed to determine current working directory (client error)".to_string())?;
 
         let resolved_cwd = work_dir
             .canonicalize()
@@ -44,22 +46,22 @@ impl SafePath {
         let resolved_path = if full_path.exists() {
             full_path
                 .canonicalize()
-                .map_err(|_| "Failed to canonicalize path (client side error)".to_string())?
+                .map_err(|_| "Failed to canonicalize path (client error)".to_string())?
         } else {
             let mut current = full_path.as_path();
 
             while !current.exists() {
                 current = current.parent()
-                    .ok_or("Failed to canonicalize path (client side error)".to_string())?;
+                    .ok_or("Failed to canonicalize path (client error)".to_string())?;
             }
 
             let canonical_parent = current
                 .canonicalize()
-                .map_err(|_| "Failed to canonicalize path (client side error)".to_string())?;
+                .map_err(|_| "Failed to canonicalize path (client error)".to_string())?;
 
             let stripped = full_path
                 .strip_prefix(current)
-                .map_err(|_| "Failed to canonicalize path (client side error)".to_string())?;
+                .map_err(|_| "Failed to canonicalize path (client error)".to_string())?;
 
             canonical_parent.join(stripped)
         };
@@ -75,10 +77,11 @@ impl SafePath {
     pub fn within_workspace(self) -> Result<Self, String> {
         if !self.resolved_path.starts_with(&self.workspace) {
             return Err(format!(
-                "Path '{}' is outside the workspace (this does not imply the path exists)",
+                "Accessing path '{}' is not allowed",
                 self.original_path.display()
             ));
         }
+        
         Ok(self)
     }
 
@@ -92,7 +95,7 @@ impl SafePath {
 
         if root_requested {
             return Err(format!(
-                "Direct reference to workspace root '{}' is not allowed (Operation may not require this path to be root)",
+                "Direct reference to workspace root '{}' is not required",
                 self.original_path.display()));
         }
 
@@ -147,18 +150,34 @@ impl SafePath {
     }
 
     // Apply ignore rules
-    pub fn ignore_rules(self, matcher: &Gitignore) -> Result<Self, String> {
-        let is_dir = self.resolved_path.is_dir();
+    pub fn ignore_rules(self) -> Result<Self, String> {
+        // Build the ignore matcher
+        let mut builder = GitignoreBuilder::new(&self.workspace);
+        let ignore_file = ensure_ignore_file();
 
-        if matcher.matched(&self.resolved_path, is_dir).is_ignore() {
-            // Output error should not hint the existance of the file
-            return Err(format!(
-                "Path '{}' does not exists",
-                self.original_path.display()
-            ));
+        if let Some(ignore_file) = ignore_file {
+            builder.add(&ignore_file);
         }
 
-        Ok(self)
+        let matcher = builder.build().ok();
+
+        // Apply ignore rules
+        match matcher {
+            Some(matcher) => {
+                let is_dir = self.resolved_path.is_dir();
+
+                if matcher.matched(&self.resolved_path, is_dir).is_ignore() {
+                    // Output error should not hint the existance of the file
+                    return Err(format!(
+                        "Path '{}' does not exists",
+                        self.original_path.display()
+                    ));
+                }
+
+                Ok(self)
+            },
+            None => Ok(self),
+        }
     }
 
     // Extract final usable path

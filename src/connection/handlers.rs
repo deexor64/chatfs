@@ -1,3 +1,4 @@
+use serde_json::Value;
 use tungstenite::{Message, WebSocket, stream::MaybeTlsStream};
 use std::net::TcpStream;
 
@@ -40,7 +41,7 @@ pub fn handle_connect_syn(message: ConnectSyn, socket: &mut WebSocket<MaybeTlsSt
         }
     }
 
-    println!(" ➤ Connected → {}\n\n", message.gateway_url);
+    println!(" ➤  Connected → {}\n\n", message.gateway_url);
 
     Ok(())
 }
@@ -63,24 +64,30 @@ pub fn handle_ping(socket: &mut WebSocket<MaybeTlsStream<TcpStream>>) -> Result<
         }
     }
 
-    println!("ـﮩﮩ٨ـ  Ping recieved. Hearbeat sent...");
+    println!("\n ـﮩﮩ٨ـ  Ping recieved, Hearbeat sent");
 
     Ok(())
 }
 
 
 pub fn handle_llm_command(message: LlmCommand, socket: &mut WebSocket<MaybeTlsStream<TcpStream>>) -> Result<(), String> {
-    // Execute command
-    let result = execute_command(&message.command, &message.params)?;
-
-    // Reply with LlmResult
-    let reply = LlmResult {
-        id: message.id.clone(),
-        status: result.status,
-        reply_type: ReplyType::LlmResult,
-        result: result.result
+    // Execute command and form reply
+    let reply = match execute_command(&message.command, &message.params) {
+        Ok(result) => LlmResult {
+            id: message.id.clone(),
+            status: true,
+            reply_type: ReplyType::LlmResult,
+            result: result
+        },
+        Err(err) => LlmResult {
+            id: message.id.clone(),
+            status: false,
+            reply_type: ReplyType::LlmResult,
+            result: Value::String(err)
+        }
     };
 
+    // Reply with LlmResult
     match serde_json::to_string(&reply) {
         Ok(reply) => {
             if let Err(_) = socket.send(Message::Text(reply.into())) {
@@ -92,7 +99,8 @@ pub fn handle_llm_command(message: LlmCommand, socket: &mut WebSocket<MaybeTlsSt
         }
     }
 
-    println!("\n✳ Command executed → {}", &message);
+    // TODO: Make this take only command and params
+    println!("\n ✳  Command executed → {}", &message);
 
     Ok(())
 }

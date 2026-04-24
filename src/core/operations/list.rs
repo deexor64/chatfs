@@ -1,9 +1,10 @@
 use ignore::WalkBuilder;
 use serde::Serialize;
-use serde_json::{Value, json};
+use serde_json::Value;
 use std::{collections::HashMap, path::{Path, PathBuf}};
 
-use super::super::safe_path::{ExpectedType, SafePath};
+use super::super::validators::{list::validator, utils::ignore_file::ensure_ignore_file};
+
 
 #[derive(Serialize)]
 struct Node {
@@ -13,35 +14,15 @@ struct Node {
     children: Option<Vec<Node>>,
 }
 
-pub fn list(queries: &HashMap<String, String>) -> Result<ExecutionResult, String> {
-    let recursive = match queries.get("recursive").and_then(|v| v.as_bool()) {
-        Some(value) => value,
-        None => return json!({"status": false, "error": "Missing or invalid 'recursive' parameter"}),
-    };
-
-    let item_type = match queries.get("item_type").and_then(|v| v.as_str()) {
-        Some(value) => value,
-        None => return json!({"status": false, "error": "Missing or invalid 'item_type' parameter"}),
-    };
-
-    let _path = match queries.get("path").and_then(|v| v.as_str()) {
-        Some(value) => value,
-        None => return json!({"status": false, "error": "Missing or invalid 'path' parameter"}),
-    };
-
-    let _op_path = SafePath::from(PathBuf::from(_path))
-        .and_then(|p| p.within_workspace())
-        .and_then(|p| p.expect_type(ExpectedType::Dir));
-
-    let path = match _op_path {
-        Ok(op) => op.build(),
-        Err(e) => return json!({"status": false, "error": format!("path: {}", e)})
-    };
+pub fn list(queries: &HashMap<String, String>) -> Result<Value, String> {
+    let (recursive, item_type, path) = validator(queries)?;
 
     // Walk builder
     let mut builder = WalkBuilder::new(&path);
 
     // Add ignore file
+    let ignore_file = ensure_ignore_file();
+
     if let Some(ignore) = ignore_file {
         builder.add_ignore(ignore);
     }
@@ -74,11 +55,8 @@ pub fn list(queries: &HashMap<String, String>) -> Result<ExecutionResult, String
     // Build JSON tree recursively
     let root_node = build_node(&path, &paths, item_type, true);
 
-    // Serialize to JSON
-    json!({
-        "status": true,
-        "list": serde_json::to_value(&root_node).unwrap()
-    })
+    // Return result
+    Ok(serde_json::to_value(&root_node).unwrap())
 }
 
 fn build_node(root: &Path, paths: &[PathBuf], item_type: &str, is_root: bool) -> Node {

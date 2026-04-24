@@ -6,7 +6,8 @@ use std::path::PathBuf;
 use super::super::ignore::{build_matcher};
 use super::super::safe_path::{ExpectedType, SafePath};
 
-pub fn copy(queries: &HashMap<String, String>) -> Result<ExecutionResult, String> {
+// Function is name 'mv' becuase 'move' is a rust reserved keyword
+pub fn mv(queries: &HashMap<String, String>) -> Result<Value, String> {
     let _path = match queries.get("path").and_then(|v| v.as_str()) {
         Some(value) => value,
         None => return json!({"status": false, "error": "Missing or invalid 'path' parameter"}),
@@ -40,30 +41,8 @@ pub fn copy(queries: &HashMap<String, String>) -> Result<ExecutionResult, String
         Err(e) => return json!({"status": false, "error": format!("path: {}", e)})
     };
 
-    if path.is_dir() {
-        match copy_dir(&path, &dest_path) {
-            Ok(_) => json!({ "status": true, "message": format!("Copied '{}' to '{}'", _path,  _dest_path) }),
-            Err(e) => json!({ "status": false, "error": format!("Failed to copy '{}' to '{}' ({})", _path,  _dest_path, e)}),
-        }
-    } else {
-        match fs::copy(&path, &dest_path) {
-            Ok(_) => json!({ "status": true, "message": format!("Copied '{}' to '{}'", _path,  _dest_path) }),
-            Err(e) => json!({ "status": false, "error": format!("Failed to copy '{}' to '{}' ({})", _path,  _dest_path, e)}),
-        }
+    match fs::rename(&path, &dest_path) {
+        Ok(_) => json!({ "status": true, "message": format!("Moved '{}' to '{}'", _path,  _dest_path) }),
+        Err(e) => json!({ "status": false, "error": format!("Failed to move '{}' to '{}' ({})", _path,  _dest_path, e) }),
     }
-}
-
-fn copy_dir(src: &PathBuf, dst: &PathBuf) -> std::io::Result<()> {
-    fs::create_dir_all(dst)?;
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let src_path = entry.path();
-        let dst_path = dst.join(entry.file_name());
-        if src_path.is_dir() {
-            copy_dir(&src_path, &dst_path)?;
-        } else {
-            fs::copy(&src_path, &dst_path)?;
-        }
-    }
-    Ok(())
 }

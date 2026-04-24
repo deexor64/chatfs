@@ -3,11 +3,13 @@ use std::collections::HashMap;
 use std::fs::{self, File};
 use std::path::PathBuf;
 
+use crate::core::types::ExecutionResult;
+
 use super::super::ignore::{build_matcher};
 use super::super::safe_path::{ExpectedType, SafePath};
 
 
-pub fn create(queries: &HashMap<String, String>) -> Result<ExecutionResult, String> {
+pub fn create(queries: &HashMap<String, String>) -> Result<Value, String> {
     let item_type = match queries.get("item_type").and_then(|v| v.as_str()) {
         Some(value) => value,
         None => return json!({"status": false, "error": "Missing or invalid 'item_type' parameter"}),
