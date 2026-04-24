@@ -4,6 +4,7 @@ use std::{ collections::HashMap, fs::File, io::{BufRead, BufReader}};
 use super::super::validators::content::validator;
 use super::super::validators::utils::parse_lines::parse_lines;
 
+const MAX_LINES: usize = 500;
 
 pub fn content(queries: &HashMap<String, String>) -> Result<Value, String> {
     let (path, lines) = validator(queries)?;
@@ -28,7 +29,7 @@ pub fn content(queries: &HashMap<String, String>) -> Result<Value, String> {
     }
 
     // Parse line string
-    let (start, end, note) = parse_lines(&lines, content_lines.len(), 500);
+    let (start, end, note) = parse_lines(&lines, content_lines.len(), MAX_LINES);
 
     let selected = content_lines[start..end].to_vec();
 

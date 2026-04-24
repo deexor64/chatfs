@@ -34,6 +34,7 @@ pub fn validator(queries: &HashMap<String, String>) -> Result<(bool, &str, PathB
     let _safe_path = SafePath::from(PathBuf::from(_path))
         .and_then(|p| p.ignore_rules())
         .and_then(|p| p.within_workspace())
+        .and_then(|p| p.no_direct_root())
         .and_then(|p| p.expect_type(ExpectedType::Dir));
 
     let path = match _safe_path {

@@ -50,6 +50,11 @@ pub fn socket_loop() -> Result<(), String> {
                         logger::log_warn("Connection closed by gateway".to_string());
                         return Ok(());
                     },
+                    Message::Ping(msg) => {
+                        if let Err(e) = socket.write(Message::Pong(msg)) {
+                            logger::log_error(e.to_string());
+                        }
+                    },
                     Message::Text(msg) => {
                         if let Ok(parsed) = serde_json::from_str::<ConnectSyn>(&msg) {
                             if let Err(e) = handle_connect_syn(parsed, &mut socket) {
@@ -57,6 +62,7 @@ pub fn socket_loop() -> Result<(), String> {
                             }
 
                         } else if let Ok(_) = serde_json::from_str::<Ping>(&msg) {
+                            // This is a manual ping/pong message to manage the life cycle of client objects at server
                             if let Err(e) = handle_ping(&mut socket) {
                                 logger::log_error(e);
                             }

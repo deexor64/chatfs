@@ -1,7 +1,11 @@
 use regex::Regex;
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf, sync::LazyLock};
 
 use super::utils::safe_path::{ExpectedType, SafePath};
+
+static LINE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(\d+|\*)-(\d+|\*)$").unwrap()
+});
 
 pub fn validator(
     queries: &HashMap<String, String>,
@@ -11,8 +15,7 @@ pub fn validator(
         .cloned()
         .unwrap_or_else(|| "1-*".to_string());
 
-    let re = Regex::new(r"^(\d+|\*)-(\d+|\*)$").unwrap();
-    if !re.is_match(&lines) {
+    if !LINE_REGEX.is_match(&lines) {
         return Err("lines: Lines must follow 'start-end' (e.g. 2-2, 1-5, 1-* or *-10)".to_string());
     }
 
