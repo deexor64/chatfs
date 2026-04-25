@@ -1,7 +1,5 @@
 # **ChatFS: The Bridge That Lets Web AI Code Like a Local Pro**
 
----
-
 ## 1. Use case
 
 Imagine you’re building something with Grok, Qwen, Claude, or ChatGPT in your browser.
@@ -53,9 +51,9 @@ This leverages the modern **Web Browsing** feature available in almost every maj
 
 It has two parts:
 
-### 🌐 Cloud proxy (FastAPI server)
+### 🌐 Cloud proxy ([FastAPI Server](https://github.com/deexor64/chatfs-server))
 
-* hosted somewhere public (Render, etc.)
+* hosted somewhere public
 * acts like a simple router
 * exposes clean URL-based commands the LLM can call
 
@@ -79,7 +77,7 @@ From that point, it can:
 * create/edit/move/delete stuff
 
 just by generating normal URLs.
-look at the [AI prompt](./prompt.md) for more info
+look at the [Prompt](./PROMPT.md) for more info
 
 ---
 
@@ -89,6 +87,8 @@ look at the [AI prompt](./prompt.md) for more info
 2. It registers itself with a client ID
 3. You paste the workspace URL into chat
 4. The AI wants context → it outputs a URL like:
+
+see more info at [Installation Instructions](./INSTALLATION.md)
 
 ```
 /list?path=&recursive=true
