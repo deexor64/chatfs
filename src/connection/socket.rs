@@ -2,8 +2,8 @@ use std::sync::OnceLock;
 use std::time::Duration;
 use tungstenite::{Message, connect};
 
-use super::types::{ConnectSyn, Ping, LlmCommand};
-use super::handlers::{handle_connect_syn, handle_ping, handle_llm_command};
+use super::types::{ConnectSyn, Ping, LlmCommand, InvalidLlmCommand};
+use super::handlers::{handle_connect_syn, handle_ping, handle_llm_command, handle_invalid_llm_command};
 use crate::utils::logger;
 
 static GATEWAY: OnceLock<String> = OnceLock::new();
@@ -63,6 +63,11 @@ pub fn socket_loop() -> Result<(), String> {
 
                         } else if let Ok(parsed) = serde_json::from_str::<LlmCommand>(&msg) {
                             if let Err(e) = handle_llm_command(parsed, &mut socket) {
+                                logger::log_error(e);
+                            }
+
+                        } else if let Ok(parsed) = serde_json::from_str::<InvalidLlmCommand>(&msg) {
+                            if let Err(e) = handle_invalid_llm_command(parsed, &mut socket) {
                                 logger::log_error(e);
                             }
 

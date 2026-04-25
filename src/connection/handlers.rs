@@ -2,7 +2,7 @@ use serde_json::Value;
 use tungstenite::{Message, WebSocket, stream::MaybeTlsStream};
 use std::net::TcpStream;
 
-use super::types::{ConnectSyn, LlmCommand, ConnectAck, Pong, LlmResult, ReplyType};
+use super::types::{ConnectSyn, LlmCommand, InvalidLlmCommand, ConnectAck, Pong, LlmResult, ReplyType};
 use crate::core::executor::execute_command;
 
 
@@ -101,6 +101,33 @@ pub fn handle_llm_command(message: LlmCommand, socket: &mut WebSocket<MaybeTlsSt
 
     // TODO: Make this take only command and params
     println!("\n ✳  Command executed → {}", &message);
+
+    Ok(())
+}
+
+pub fn handle_invalid_llm_command(message: InvalidLlmCommand, socket: &mut WebSocket<MaybeTlsStream<TcpStream>>)
+-> Result<(), String> {
+    // Execute command and form reply
+    let reply = LlmResult {
+        id: message.id,
+        status: false,
+        reply_type: ReplyType::LlmResult,
+        result: Value::String(format!("Invalid command '{}'", &message.command))
+    };
+
+    // Reply with LlmResult
+    match serde_json::to_string(&reply) {
+        Ok(reply) => {
+            if let Err(_) = socket.send(Message::Text(reply.into())) {
+                return Err("Failed to send error for invalid command".to_string());
+            }
+        },
+        Err(_) => {
+            return Err("Failed to send error for invalid command".to_string())
+        }
+    }
+
+    println!("\n ✕  Invalid command rejected → {}", message.command);
 
     Ok(())
 }

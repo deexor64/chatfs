@@ -9,7 +9,7 @@ pub fn validator(queries: &HashMap<String, String>) -> Result<(bool, &str, PathB
         Some(value) => match value.as_str() {
             "true" => true,
             "false" => false,
-            _ => return Err("Recursive parameter must be 'true' or 'false' (literally)".into()),
+            _ => return Err("recursive: Recursion must be 'true' or 'false' (literally)".into()),
         },
         None => false,
     };
@@ -20,7 +20,7 @@ pub fn validator(queries: &HashMap<String, String>) -> Result<(bool, &str, PathB
             if v == "file" || v == "folder" {
                 v
             } else {
-                return Err("Item type must be 'file' or 'folder' (literally)".into());
+                return Err("item_type: Item type must be 'file' or 'folder' (literally)".into());
             }
         },
         None => "all",
@@ -34,7 +34,6 @@ pub fn validator(queries: &HashMap<String, String>) -> Result<(bool, &str, PathB
     let _safe_path = SafePath::from(PathBuf::from(_path))
         .and_then(|p| p.ignore_rules())
         .and_then(|p| p.within_workspace())
-        .and_then(|p| p.no_direct_root())
         .and_then(|p| p.expect_type(ExpectedType::Dir));
 
     let path = match _safe_path {

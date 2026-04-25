@@ -1,3 +1,4 @@
+pub mod prompt;
 pub mod list;
 pub mod content;
 pub mod create;

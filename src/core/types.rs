@@ -2,6 +2,8 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub enum Command {
+    #[serde(rename = "prompt")]
+    Prompt,
     #[serde(rename = "list")]
     List,
     #[serde(rename = "content")]

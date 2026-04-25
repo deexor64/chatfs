@@ -6,6 +6,7 @@ use super::operations;
 
 pub fn execute_command(command: &Command, queries: &HashMap<String, String>) -> Result<Value, String> {
     match command {
+        Command::Prompt => operations::prompt::prompt(),
         Command::List => operations::list::list(queries),
         Command::Content => operations::content::content(queries),
         Command::Create => operations::create::create(queries),

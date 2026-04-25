@@ -47,6 +47,17 @@ impl Display for LlmCommand {
     }
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InvalidLlmCommand {
+    pub status: bool,
+    pub message_type: MessageType,
+    pub id: String,
+    pub command: String,
+    pub params: HashMap<String, String>
+}
+
+
 // Reply types
 #[derive(Debug, Serialize)]
 pub enum ReplyType {
