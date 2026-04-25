@@ -5,6 +5,15 @@ on:
     tags:
       - "v*"
 
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build (${{ matrix.target }})
@@ -28,6 +37,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -40,7 +51,7 @@ jobs:
       - name: Package (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
-          mkdir dist
+          mkdir -p dist
           cp target/${{ matrix.target }}/release/chatfs dist/chatfs
           tar -czf ${{ matrix.name }}.tar.gz -C dist chatfs
 
@@ -51,14 +62,16 @@ jobs:
           copy target\${{ matrix.target }}\release\chatfs.exe dist\chatfs.exe
           copy dist\chatfs.exe ${{ matrix.name }}.exe
 
-      - name: Generate checksum
+      - name: Generate checksum (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          sha256sum ${{ matrix.name }}.tar.gz > ${{ matrix.name }}.sha256
+
+      - name: Generate checksum (Windows)
+        if: runner.os == 'Windows'
         shell: bash
         run: |
-          if [ -f "${{ matrix.name }}.tar.gz" ]; then
-            sha256sum ${{ matrix.name }}.tar.gz > ${{ matrix.name }}.sha256
-          else
-            sha256sum ${{ matrix.name }}.exe > ${{ matrix.name }}.sha256
-          fi
+          sha256sum ${{ matrix.name }}.exe > ${{ matrix.name }}.sha256
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -80,9 +93,28 @@ jobs:
         run: |
           cat **/*.sha256 > checksums.txt
 
+      - name: Determine prerelease flag
+        id: pre
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+
+          # strip leading "v"
+          VERSION="${TAG#v}"
+
+          # extract major version
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+
+          if [ "$MAJOR" -lt 1 ]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          prerelease: ${{ steps.pre.outputs.prerelease }}
           files: |
             **/*.tar.gz
             **/*.exe
