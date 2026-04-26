@@ -64,7 +64,7 @@ pub fn handle_ping(socket: &mut WebSocket<MaybeTlsStream<TcpStream>>) -> Result<
         }
     }
 
-    println!("\n ـﮩﮩ٨ـ  Ping recieved, Heartbeat sent");
+    // println!("\n ـﮩﮩ٨ـ  Ping recieved, Heartbeat sent");
 
     Ok(())
 }

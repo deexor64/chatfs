@@ -17,10 +17,10 @@ pub fn validator(queries: &HashMap<String, String>) -> Result<(bool, &str, PathB
     let item_type = match queries.get("item_type") {
         Some(value) => {
             let v = value.as_str();
-            if v == "file" || v == "folder" {
+            if v == "file" || v == "folder" || v == "all" {
                 v
             } else {
-                return Err("item_type: Item type must be 'file' or 'folder' (literally)".into());
+                return Err("item_type: Item type must be 'file' or 'folder' or 'all' (literally)".into());
             }
         },
         None => "all",
