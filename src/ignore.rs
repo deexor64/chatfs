@@ -8,13 +8,13 @@ use std::path::PathBuf;
  */
 const IGNORE_FILE_NAME: &str = ".chatignore";
 
-pub fn ensure_ignore_file() -> Option<PathBuf> {
+pub fn get_ignore_file() -> Result<PathBuf, String> {
     let path = PathBuf::from(IGNORE_FILE_NAME);
 
     // Return existing ignore file if it exists
-    if path.exists() {
-        return Some(path);
+    if !path.exists() {
+        return Err("Ignore file not found".to_string());
     }
 
-    None
+    return Ok(path);
 }

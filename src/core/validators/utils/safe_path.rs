@@ -1,7 +1,7 @@
 use std::{env, path::{Path, PathBuf}};
 use ignore::gitignore::{GitignoreBuilder};
 
-use crate::core::validators::utils::ignore_file::ensure_ignore_file;
+use crate::ignore::get_ignore_file;
 
 pub struct SafePath {
     original_path: PathBuf,
@@ -81,7 +81,7 @@ impl SafePath {
                 self.original_path.display()
             ));
         }
-        
+
         Ok(self)
     }
 
@@ -153,9 +153,9 @@ impl SafePath {
     pub fn ignore_rules(self) -> Result<Self, String> {
         // Build the ignore matcher
         let mut builder = GitignoreBuilder::new(&self.workspace);
-        let ignore_file = ensure_ignore_file();
+        let ignore_file = get_ignore_file();
 
-        if let Some(ignore_file) = ignore_file {
+        if let Ok(ignore_file) = ignore_file {
             builder.add(&ignore_file);
         }
 

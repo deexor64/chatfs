@@ -3,8 +3,8 @@ use serde::Serialize;
 use serde_json::Value;
 use std::{collections::HashMap, path::{Path, PathBuf}};
 
-use super::super::validators::{list::validator, utils::ignore_file::ensure_ignore_file};
-
+use super::super::validators::list::validator;
+use crate::ignore::get_ignore_file;
 
 #[derive(Serialize)]
 struct Node {
@@ -21,9 +21,9 @@ pub fn list(queries: &HashMap<String, String>) -> Result<Value, String> {
     let mut builder = WalkBuilder::new(&path);
 
     // Add ignore file
-    let ignore_file = ensure_ignore_file();
+    let ignore_file = get_ignore_file();
 
-    if let Some(ignore) = ignore_file {
+    if let Ok(ignore) = ignore_file {
         builder.add_ignore(ignore);
     }
 

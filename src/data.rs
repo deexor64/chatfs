@@ -55,7 +55,7 @@ pub fn ensure_data_dir() -> Result<PathBuf, String> {
  */
 const CONFIG_FILE_NAME: &str = "config.json";
 
-pub fn get_config_path() -> Result<PathBuf, String> {
+pub fn get_config_file() -> Result<PathBuf, String> {
     let data_dir = ensure_data_dir()?;
     Ok(data_dir.join(CONFIG_FILE_NAME))
 }

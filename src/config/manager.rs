@@ -1,6 +1,6 @@
 use std::{sync::OnceLock, fs::File, io::BufWriter};
 
-use crate::data::get_config_path;
+use crate::data::get_config_file;
 use crate::config::types::{ConfigKey, Config};
 use crate::utils::logger;
 
@@ -9,7 +9,7 @@ use crate::utils::logger;
 fn read_config() -> Result<Config, String> {
     logger::log_debug("Reading config...".to_string());
 
-    let config_file = get_config_path()?; // This does not fail
+    let config_file = get_config_file()?; // This does not fail
 
     if !config_file.exists() {
         return Err("Config not found".to_string())
@@ -30,7 +30,7 @@ fn read_config() -> Result<Config, String> {
 fn save_config(config: Config) -> Result<(), String> {
     logger::log_debug("Saving config...".to_string());
 
-    let config_file = get_config_path()?; // This does not fail
+    let config_file = get_config_file()?; // This does not fail
 
     // Attempt to create a new config file
     let file = File::create(config_file).map_err(|_| "Failed to save config".to_string())?;
