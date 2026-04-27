@@ -1,20 +1,19 @@
 use serde_json::{Value, json};
 use std::{collections::HashMap, fs};
 
-use super::copy::{parse_queries, resolve_destination};
+use super::copy::parse_queries;
 
 // Function name is 'mv' because 'move' is a rust reserved keyword
 pub fn mv(queries: &HashMap<String, String>) -> Result<Value, String> {
-    let (source_path, dest_path) = validator(queries)?;
-    let final_dest = resolve_destination(&source_path, dest_path)?;
+    let (source_path, dest_path) = parse_queries(queries)?;
 
-    if final_dest.exists() && final_dest.is_file() && source_path.is_file() {
-        fs::remove_file(&final_dest)
-            .map_err(|e| format!("Failed to replace destination file '{}' ({})", final_dest.display(), e))?;
+    if dest_path.resolved.exists() && dest_path.resolved.is_file() && source_path.resolved.is_file() {
+        fs::remove_file(&dest_path.resolved)
+            .map_err(|e| format!("Failed to replace destination file '{}' ({})", dest_path.original.display(), e))?;
     }
 
-    fs::rename(&source_path, &final_dest)
-        .map_err(|e| format!("Failed to move '{}' to '{}' ({})", source_path.display(), final_dest.display(), e))?;
+    fs::rename(&source_path.resolved, &dest_path.resolved)
+        .map_err(|e| format!("Failed to move '{}' to '{}' ({})", source_path.original.display(), dest_path.original.display(), e))?;
 
-    Ok(json!({"message": format!("Moved '{}' to '{}'", source_path.display(), final_dest.display())}))
+    Ok(json!({"message": format!("Moved '{}' to '{}'", source_path.original.display(), dest_path.original.display())}))
 }

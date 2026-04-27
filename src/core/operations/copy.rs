@@ -1,26 +1,25 @@
 use serde_json::{Value, json};
 use std::{collections::HashMap, fs, path::PathBuf};
 
-use super::super::utils::copy_move::{resolve_destination, validator};
+use crate::core::{types::{ItemType, OpPath}, utils::safe_path::SafePath};
 
 pub fn copy(queries: &HashMap<String, String>) -> Result<Value, String> {
-    let (source_path, dest_path) = validator(queries)?;
-    let final_dest = resolve_destination(&source_path, dest_path)?;
+    let (source_path, dest_path) = parse_queries(queries)?;
 
-    if source_path.is_dir() {
-        copy_dir(&source_path, &final_dest)
-            .map_err(|e| format!("Failed to copy '{}' to '{}' ({})", source_path.display(), final_dest.display(), e))?;
+    if source_path.resolved.is_dir() {
+        copy_dir(&source_path.resolved, &dest_path.resolved)
+            .map_err(|e| format!("Failed to copy '{}' to '{}' ({})", source_path.original.display(), dest_path.original.display(), e))?;
     } else {
-        if let Some(parent) = final_dest.parent() {
+        if let Some(parent) = dest_path.resolved.parent() {
             fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create parent directories for '{}' ({})", final_dest.display(), e))?;
+                .map_err(|e| format!("Failed to create parent directories for '{}' ({})", dest_path.original.display(), e))?;
         }
 
-        fs::copy(&source_path, &final_dest)
-            .map_err(|e| format!("Failed to copy '{}' to '{}' ({})", source_path.display(), final_dest.display(), e))?;
+        fs::copy(&source_path.resolved, &dest_path.resolved)
+            .map_err(|e| format!("Failed to copy '{}' to '{}' ({})", source_path.original.display(), dest_path.original.display(), e))?;
     }
 
-    Ok(json!({"message": format!("Copied '{}' to '{}'", source_path.display(), final_dest.display())}))
+    Ok(json!({"message": format!("Copied '{}' to '{}'", source_path.original.display(), dest_path.original.display())}))
 }
 
 fn copy_dir(src: &PathBuf, dst: &PathBuf) -> std::io::Result<()> {
@@ -38,64 +37,40 @@ fn copy_dir(src: &PathBuf, dst: &PathBuf) -> std::io::Result<()> {
     Ok(())
 }
 
+pub fn parse_queries(queries: &HashMap<String, String>) -> Result<(OpPath, OpPath), String> {
+    // Source path
+    let path = match queries.get("path") {
+        Some(value) => value,
+        None => return Err("path: Missing or invalid 'path' parameter".to_string()),
+    };
 
-
-pub fn parse_queries(queries: &HashMap<String, String>) -> Result<(PathBuf, PathBuf), String> {
-    let _path = queries
-        .get("path")
-        .map(|value| value.as_str())
-        .ok_or_else(|| "path: Missing or invalid 'path' parameter".to_string())?;
-
-    if _path.is_empty() {
-        return Err("path: Path cannot be empty (e.g. 'path=src/ui', 'path=src/file.txt')".to_string());
-    }
-
-    let _dest_path = queries
-        .get("dest_path")
-        .map(|value| value.as_str())
-        .ok_or_else(|| "dest_path: Missing or invalid 'dest_path' parameter".to_string())?;
-
-    if _dest_path.is_empty() {
-        return Err("dest_path: Destination path cannot be empty (e.g. 'dest_path=src/components', 'dest_path=src/test.py')".to_string());
-    }
-
-    let source = SafePath::from(PathBuf::from(_path))
+    let safe_path = SafePath::from(PathBuf::from(path))
         .and_then(|p| p.within_workspace())
         .and_then(|p| p.no_direct_root())
-        .and_then(|p| p.expect_type(ExpectedType::AnyExist))
-        .and_then(|p| p.ignore_rules())
-        .map_err(|e| format!("path: {}", e))?
-        .build();
+        .and_then(|p| p.expect_type(ItemType::AnyExist))
+        .and_then(|p| p.ignore_rules());
 
-    let destination = SafePath::from(PathBuf::from(_dest_path))
+    let path: OpPath = match safe_path {
+        Ok(p) => p.build(),
+        Err(e) => return Err(format!("path: {}", e)),
+    };
+
+    // Destination path
+    let dest_path = match queries.get("dest_path") {
+        Some(value) => value,
+        None => return Err("dest_path: Missing or invalid 'dest_path' parameter".to_string()),
+    };
+
+    let safe_dest_path = SafePath::from(PathBuf::from(dest_path))
         .and_then(|p| p.within_workspace())
-        .and_then(|p| p.ignore_rules())
-        .map_err(|e| format!("dest_path: {}", e))?
-        .build();
+        .and_then(|p| p.no_direct_root())
+        .and_then(|p| p.expect_type(ItemType::AnyNonExist))
+        .and_then(|p| p.ignore_rules());
 
-    Ok((source, destination))
-}
+    let dest_path: OpPath = match safe_dest_path {
+        Ok(p) => p.build(),
+        Err(e) => return Err(format!("dest_path: {}", e)),
+    };
 
-pub fn resolve_destination(src: &Path, dest: PathBuf) -> Result<PathBuf, String> {
-    if dest.exists() {
-        if dest.is_dir() {
-            let file_name = src.file_name().ok_or_else(|| "path: Invalid source path".to_string())?;
-            return Ok(dest.join(file_name));
-        }
-
-        if src.is_dir() {
-            return Err("dest_path: Cannot copy or move a folder onto an existing file path".to_string());
-        }
-
-        return Ok(dest);
-    }
-
-    if !src.is_dir() {
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("dest_path: Failed to create parent directories ({})", e))?;
-        }
-    }
-
-    Ok(dest)
+    Ok((path, dest_path))
 }
