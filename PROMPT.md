@@ -129,14 +129,13 @@ NOTES:
 
 
 --------------------------------------------------
-GLOBAL RULES
+PATHS BEHAVIOUR
 --------------------------------------------------
 
 - All paths are relative to the workspace root
 - "" or "." represents the workspace root
 - Directory traversal outside workspace is rejected (e.g. "../")
-- Paths must be URL-encoded if they contain unsafe characters
-- Ignore rules may exclude files/folders in list operations
+- Ignore rules may exclude files/folders
 - Copy and move behave like standard cp/mv commands
 
 
@@ -146,8 +145,7 @@ LINES BEHAVIOR
 
 - Line ranges are 1-based and inclusive
 - "*" means unbounded
-- If end exceeds file length → clamped
-- If range exceeds maximum allowed → truncated
+- Patterns other than 'start-end' are rejected for safety
 
 
 --------------------------------------------------
@@ -164,19 +162,12 @@ Status shows the success or failure of the operation
 
 
 --------------------------------------------------
-ERROR HANDLING
---------------------------------------------------
-
-- Status -> false
-- Result -> Reason for the failure
-
-
---------------------------------------------------
 USAGE NOTES
 --------------------------------------------------
 
 - Always construct full URLs using workspace URL + command
 - Always include required parameters
+- Paths and Contents must be URL-encoded if they contain URL unsafe characters
 - Prefer minimal queries (avoid unnecessary params)
 - Ask user confirmation before executing any state-changing operation (create, copy, move, delete, write)
 - No confirmation required for read-only operations (list, content)

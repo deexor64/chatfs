@@ -1,21 +1,9 @@
 use std::{env, path::{Path, PathBuf}};
 use ignore::gitignore::{GitignoreBuilder};
 
+use crate::core::types::{ItemType, OpPath};
 use crate::ignore::get_ignore_file;
 
-pub struct SafePath {
-    original_path: PathBuf,
-    resolved_path: PathBuf,
-    workspace: PathBuf,
-}
-
-#[derive(PartialEq)]
-pub enum ExpectedType {
-    File, // Imply exists
-    Dir,  // Imply exists
-    AnyExist,
-    AnyNonExist
-}
 
 /*
  * Resolves and validates a user-provided path against the current workspace directory
@@ -26,6 +14,10 @@ pub enum ExpectedType {
  * Prevents directory traversal and access to paths outside the workspace scope
  * ISSUE: Symlinked directories can still give access to outside via canonicalization
  */
+pub struct SafePath {
+    operational_path: OpPath,
+}
+
 impl SafePath {
     pub fn from(path: PathBuf) -> Result<Self, String> {
         let work_dir = env::current_dir()
@@ -67,18 +59,20 @@ impl SafePath {
         };
 
         Ok(Self {
-            original_path: path,
-            resolved_path: resolved_path,
-            workspace: resolved_cwd,
+            operational_path: OpPath {
+                original: path,
+                resolved: resolved_path,
+                workspace: resolved_cwd,
+            },
         })
     }
 
     // Ensure path is inside workspace
     pub fn within_workspace(self) -> Result<Self, String> {
-        if !self.resolved_path.starts_with(&self.workspace) {
+        if !self.operational_path.resolved.starts_with(&self.operational_path.workspace) {
             return Err(format!(
                 "Accessing path '{}' is not allowed",
-                self.original_path.display()
+                self.operational_path.original.display()
             ));
         }
 
@@ -89,58 +83,59 @@ impl SafePath {
     // Is not effective with ExpectedType::File
     pub fn no_direct_root(self) -> Result<Self, String> {
         let root_requested =
-            self.original_path.as_os_str().is_empty()
-            || self.original_path == Path::new(".")
-            || self.original_path == Path::new("./");
+            self.operational_path.original.as_os_str().is_empty()
+            || self.operational_path.original == Path::new(".")
+            || self.operational_path.original == Path::new("./");
 
         if root_requested {
             return Err(format!(
                 "Direct reference to workspace root '{}' is not required",
-                self.original_path.display()));
+                self.operational_path.original.display()
+            ));
         }
 
         Ok(self)
     }
 
     // Validate expected type
-    pub fn expect_type(self, expected: ExpectedType) -> Result<Self, String> {
+    pub fn expect_type(self, expected: ItemType) -> Result<Self, String> {
         match expected {
-            ExpectedType::File => {
-                if self.resolved_path == self.workspace {
+            ItemType::File => {
+                if self.operational_path.resolved == self.operational_path.workspace {
                     return Err(format!(
                         "Cannot use workspace root '{}' as a file",
-                        self.original_path.display()
+                        self.operational_path.original.display()
                     ));
                 }
 
-                if !self.resolved_path.is_file() {
+                if !self.operational_path.resolved.is_file() {
                     return Err(format!(
                         "Path '{}' does not exists or is not a file",
-                        self.original_path.display()
+                        self.operational_path.original.display()
                     ));
                 }
             },
-            ExpectedType::Dir => {
-                if !self.resolved_path.is_dir() {
+            ItemType::Folder => {
+                if !self.operational_path.resolved.is_dir() {
                     return Err(format!(
                         "Path '{}' does not exists or is not a folder",
-                        self.original_path.display()
+                        self.operational_path.original.display()
                     ));
                 }
             },
-            ExpectedType::AnyExist => {
-                if !self.resolved_path.exists() {
+            ItemType::AnyExist => {
+                if !self.operational_path.resolved.exists() {
                     return Err(format!(
                         "Path '{}' does not exists",
-                        self.original_path.display()
+                        self.operational_path.original.display()
                     ));
                 }
             }
-            ExpectedType::AnyNonExist => {
-                if self.resolved_path.exists() {
+            ItemType::AnyNonExist => {
+                if self.operational_path.resolved.exists() {
                     return Err(format!(
                         "Path '{}' already exists",
-                        self.original_path.display()
+                        self.operational_path.original.display()
                     ));
                 }
             }
@@ -152,7 +147,7 @@ impl SafePath {
     // Apply ignore rules
     pub fn ignore_rules(self) -> Result<Self, String> {
         // Build the ignore matcher
-        let mut builder = GitignoreBuilder::new(&self.workspace);
+        let mut builder = GitignoreBuilder::new(&self.operational_path.workspace);
         let ignore_file = get_ignore_file();
 
         if let Ok(ignore_file) = ignore_file {
@@ -164,13 +159,13 @@ impl SafePath {
         // Apply ignore rules
         match matcher {
             Some(matcher) => {
-                let is_dir = self.resolved_path.is_dir();
+                let is_dir = self.operational_path.resolved.is_dir();
 
-                if matcher.matched(&self.resolved_path, is_dir).is_ignore() {
+                if matcher.matched(&self.operational_path.resolved  , is_dir).is_ignore() {
                     // Output error should not hint the existance of the file
                     return Err(format!(
                         "Path '{}' does not exists",
-                        self.original_path.display()
+                        self.operational_path.original.display()
                     ));
                 }
 
@@ -180,8 +175,8 @@ impl SafePath {
         }
     }
 
-    // Extract final usable path
-    pub fn build(self) -> PathBuf {
-        self.resolved_path
+    // Return self after applying validations
+    pub fn build(self) -> OpPath {
+        self.operational_path
     }
 }

@@ -1,7 +1,7 @@
 use serde_json::{Value, json};
 use std::{collections::HashMap, fs};
 
-use super::super::validators::copy_move::{resolve_destination, validator};
+use super::copy::{parse_queries, resolve_destination};
 
 // Function name is 'mv' because 'move' is a rust reserved keyword
 pub fn mv(queries: &HashMap<String, String>) -> Result<Value, String> {

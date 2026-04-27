@@ -10,9 +10,10 @@ pub fn execute_command(command: &Command, queries: &HashMap<String, String>) -> 
         Command::List => operations::list::list(queries),
         Command::Content => operations::content::content(queries),
         Command::Create => operations::create::create(queries),
-        Command::Copy => operations::copy::copy(queries),
-        Command::Move => operations::mv::mv(queries),
+        // Command::Copy => operations::copy::copy(queries),
+        // Command::Move => operations::mv::mv(queries),
         Command::Delete => operations::delete::delete(queries),
-        Command::Write => operations::write::write(queries),
+        // Command::Write => operations::write::write(queries),
+        _ => Err("Unknown command".to_string()),
     }
 }

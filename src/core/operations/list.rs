@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_json::Value;
 use std::{collections::HashMap, path::{Path, PathBuf}};
 
-use super::super::validators::list::validator;
+use crate::core::{types::{ItemType, OpPath}, utils::safe_path::SafePath};
 use crate::ignore::get_ignore_file;
 
 #[derive(Serialize)]
@@ -15,10 +15,10 @@ struct Node {
 }
 
 pub fn list(queries: &HashMap<String, String>) -> Result<Value, String> {
-    let (recursive, item_type, path) = validator(queries)?;
+    let (path, recursive, item_type) = parse_queries(queries)?;
 
     // Walk builder
-    let mut builder = WalkBuilder::new(&path);
+    let mut builder = WalkBuilder::new(&path.resolved);
 
     // Add ignore file
     let ignore_file = get_ignore_file();
@@ -40,10 +40,9 @@ pub fn list(queries: &HashMap<String, String>) -> Result<Value, String> {
         if let Ok(e) = entry {
             let path = e.path().to_path_buf();
 
-            // Apply filtering
             match item_type {
-                "folder" if path.is_dir() => paths.push(path),
-                "file" if path.is_file() => paths.push(path),
+                ItemType::Folder => if path.is_dir() { paths.push(path) },
+                ItemType::File => if path.is_file() { paths.push(path) },
                 _ => paths.push(path)
             }
         }
@@ -53,13 +52,57 @@ pub fn list(queries: &HashMap<String, String>) -> Result<Value, String> {
     paths.sort();
 
     // Build JSON tree recursively
-    let root_node = build_node(&path, &paths, item_type, true);
+    let root_node = build_node(path.resolved.as_path(), &paths, &item_type, true);
 
     // Return result
     Ok(serde_json::to_value(&root_node).unwrap())
 }
 
-fn build_node(root: &Path, paths: &[PathBuf], item_type: &str, is_root: bool) -> Node {
+
+fn parse_queries(queries: &HashMap<String, String>) -> Result<(OpPath, bool, ItemType), String> {
+    // Path
+    let path = match queries.get("path") {
+        Some(value) => value,
+        None => ".",
+    };
+
+    let safe_path = SafePath::from(PathBuf::from(path))
+        .and_then(|p| p.within_workspace())
+        .and_then(|p| p.expect_type(ItemType::Folder))
+        .and_then(|p| p.ignore_rules());
+
+
+    let path: OpPath = match safe_path {
+        Ok(p) => p.build(),
+        Err(e) => return Err(e)
+    };
+
+    // Recursive
+    let recursive: bool = match queries.get("recursive") {
+        Some(value) => match value.as_str() {
+            "true" => true,
+            "false" => false,
+            _ => return Err("recursive: Recursion must be 'true' or 'false' (literally)".into()),
+        },
+        None => false,
+    };
+
+    // Item type
+    let item_type: ItemType = match queries.get("item_type") {
+        Some(value) => match value.as_str() {
+            "file" => ItemType::File,
+            "folder" => ItemType::Folder,
+            "all" => ItemType::AnyExist,
+            _ => return Err("item_type: Item type must be 'file' or 'folder' or 'all' (literally)".into()),
+        },
+        None => ItemType::Folder,
+    };
+
+    Ok((path, recursive, item_type))
+}
+
+
+fn build_node(root: &Path, paths: &[PathBuf], item_type: &ItemType, is_root: bool) -> Node {
     let mut children = Vec::new();
 
     for path in paths {
@@ -70,10 +113,10 @@ fn build_node(root: &Path, paths: &[PathBuf], item_type: &str, is_root: bool) ->
                 if path.is_dir() {
                     let child_node = build_node(path, paths, item_type, false);
 
-                    if item_type != "file" || child_node.children.as_ref().map_or(false, |v| !v.is_empty()) {
+                    if item_type != &ItemType::File || child_node.children.as_ref().map_or(false, |v| !v.is_empty()) {
                         children.push(child_node);
                     }
-                } else if path.is_file() && (item_type != "folder") {
+                } else if path.is_file() && (item_type != &ItemType::Folder) {
                     children.push(Node {
                         name: path
                             .file_name()
