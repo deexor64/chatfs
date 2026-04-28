@@ -70,6 +70,8 @@ You basically give the AI a session URL like:
 https://server-name.com/5a0071207c90416/
 ```
 
+![Prompt](screenshots/prompt.png)
+
 From that point, it can:
 
 * list files
@@ -77,6 +79,10 @@ From that point, it can:
 * create/edit/move/delete stuff
 
 just by generating normal URLs.
+
+![Prompt](screenshots/result-1.png)
+![Prompt](screenshots/result-2.png)
+
 look at the [Prompt](./PROMPT.md) for more info
 
 ---
@@ -87,6 +93,8 @@ look at the [Prompt](./PROMPT.md) for more info
 2. It registers itself with a client ID
 3. You paste the workspace URL into chat
 4. The AI wants context → it outputs a URL like:
+
+![Prompt](screenshots/cli.png)
 
 see more info at [Installation Instructions](./INSTALLATION.md)
 
