@@ -42,13 +42,13 @@ You can rename it to `chatfs.exe` if you want.
 Before running anything, you need to tell ChatFS where your server is:
 
 ```bash
-chatfs set-config gateway <URL>/client/
+chatfs set-config gateway <URL>
 ```
 
 Example:
 
 ```bash
-chatfs set-config gateway https://your-server.com/client/
+chatfs set-config gateway "wss://your-server.com/client/"
 ```
 
 ---
