@@ -51,7 +51,7 @@ This leverages the modern **Web Browsing** feature available in almost every maj
 
 It has two parts:
 
-### 🌐 Cloud proxy ([FastAPI Server](https://github.com/deexor64/chatfs-server))
+### 🌐 Cloud proxy ([ChatFS Gateway](https://github.com/deexor64/chatfs-server))
 
 * hosted somewhere public
 * acts like a simple router

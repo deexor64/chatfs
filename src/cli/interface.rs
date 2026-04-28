@@ -13,20 +13,23 @@ pub fn cli_handler() -> Result<(), String>{
     // CLI instance
     let cli = Cli::parse();
 
-    // Disable logging if requested
-    // Subsequent log messages won't show up if logging is disabled
-    if cli.no_logging {
-        logger::toggle_logging(false);
+    // Logging and debug if requested
+    match cli.command {
+        Some(Commands::Run { no_logging, debug, .. }) => {
+            if no_logging {
+                // Subsequent log messages won't show up
+                logger::toggle_logging(false);
+            }
+            if debug {
+                // Debug log messages will show up
+                logger::toggle_debug(true);
+            }
+        }
+        _ => {}
     }
 
+    // These will show up based on the logging and debug flags
     logger::log_info("Logging is enabled (run with `--no-logging` to disable it)".to_string());
-
-    // Check debug logging early
-    // Subsequent debug log messages won't show up if logging or debug logging is kept disabled
-    if cli.debug {
-        logger::toggle_debug(true);
-    }
-
     logger::log_info("Debug logging is enabled".to_string());
 
     // Detecting environment
@@ -73,7 +76,7 @@ pub fn cli_handler() -> Result<(), String>{
                 Err(e) => return Err(e),
             }
         },
-        Some(Commands::Run { workspace, gateway }) => {
+        Some(Commands::Run { workspace, gateway, .. }) => {
             // Use workspace directory if provided, otherwise use current directory
             match workspace {
                 Some(workspace) => {
