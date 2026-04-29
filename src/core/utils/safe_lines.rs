@@ -32,5 +32,5 @@ pub fn safe_lines(lines: (Line, Line), total_lines: usize) -> Result<(usize, usi
     }
 
     // Convert to 0-based index range
-    Ok((start - 1, end - 1))
+    Ok((start - 1, end))
 }

@@ -29,6 +29,11 @@ pub fn content(queries: &HashMap<String, String>) -> Result<Value, String> {
         }
     }
 
+    // Empty file
+    if content.is_empty() {
+        return Ok(Value::String("".to_string()));
+    }
+
     // Safe line range
     let (start, end) = safe_lines(lines, content.len())?;
 

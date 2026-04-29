@@ -12,9 +12,18 @@ pub fn write(queries: &HashMap<String, String>) -> Result<Value, String> {
     let file = File::open(&path.resolved)
         .map_err(|_| "Error opening file")?;
 
-    let reader = BufReader::new(file);
+    let reader = BufReader::new(&file);
     let mut line_content: Vec<String> = reader.lines().map(|l| l.unwrap_or_default()).collect();
 
+    // Empty file
+    if line_content.is_empty() {
+        write!(&file, "{}", content)
+            .map_err(|e| format!("Failed to write file '{}' ({})", path.original.display(), e))?;
+
+        return Ok(Value::String(format!("Successfully wrote to '{}'", path.original.display())));
+    }
+
+    // Safe line range
     let (start, end) = safe_lines(lines, line_content.len())?;
     let insert_lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
     let insert_count = insert_lines.len();
@@ -73,6 +82,7 @@ fn parse_queries(queries: &HashMap<String, String>) -> Result<(OpPath, (Line, Li
     let lines: (Line, Line) = parse_lines(lines)?;
 
     // Mode
+    // TODO: add 'append' mode
     let mode: WriteMode = match queries.get("mode") {
         Some(value) => match value.as_str() {
             "shift" => WriteMode::Shift,

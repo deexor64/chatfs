@@ -25,7 +25,7 @@ pub fn parse_lines(lines: String) -> Result<(Line, Line), String> {
 
     // Reject invalid line numbers
     let start = match start {
-        "*" => Ok(Line::Num(0)),
+        "*" => Ok(Line::All),
         _ => start.parse::<usize>()
             .map(|v| Line::Num(v))
             .map_err(|_| PATTERN_ERR.to_string())
