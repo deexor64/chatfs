@@ -19,6 +19,10 @@ pub fn get_gateway() -> Option<String> {
 const MAX_LISTEN_RETRIES: usize = 5;
 
 pub fn socket_loop() -> Result<(), String> {
+    // These will show up based on the logging and debug flags
+    logger::log_info("Logging is enabled (run with `--no-logging` to disable it)".to_string());
+    logger::log_info("Debug logging is enabled".to_string());
+
     // Gateway not set
     let gateway = get_gateway().unwrap_or("".to_string());
 

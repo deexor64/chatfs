@@ -28,10 +28,6 @@ pub fn cli_handler() -> Result<(), String>{
         _ => {}
     }
 
-    // These will show up based on the logging and debug flags
-    logger::log_info("Logging is enabled (run with `--no-logging` to disable it)".to_string());
-    logger::log_info("Debug logging is enabled".to_string());
-
     // Detecting environment
     let mode = env::var("MODE").unwrap_or_else(|_| "".to_string());
     if mode == "dev" {
