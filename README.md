@@ -1,4 +1,4 @@
-# **ChatFS: The Bridge That Lets Web AI Code Like a Local Pro**
+# **ChatFS: The Bridge That Unlocks the Hidden Talent of Your Favourite AI**
 
 ## 1. Use case
 
@@ -51,7 +51,7 @@ This leverages the modern **Web Browsing** feature available in almost every maj
 
 It has two parts:
 
-### 🌐 Cloud proxy ([ChatFS Gateway](https://github.com/deexor64/chatfs-server))
+### 🌐 Cloud proxy ([ChatFS Gateway](https://github.com/alien5516788/chatfs-server))
 
 * hosted somewhere public
 * acts like a simple router
@@ -184,7 +184,7 @@ It tries to keep things simple:
 
 ---
 
-⚠️ A quick note
+## 9. A quick note
 
 This tool gives an AI controlled access to your local workspace, so use it responsibly.
 
@@ -194,8 +194,8 @@ Basically — don’t connect it to anything important without understanding wha
 
 Operations like `list` and `content` are safe to try and most useful.
 
-🔐 Privacy note
+## 10. Privacy note
 
-For better privacy, it’s recommended to self-host the server part instead of using a public one.
+For better privacy, it's recommended to self-host the server part instead of using a public one.
 
 That way, your workspace traffic doesn’t go through any external server you don’t control.

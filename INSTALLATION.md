@@ -1,11 +1,11 @@
-# 🛠️ Installation
+# Installation
 
 ChatFS is a small CLI tool you run locally.
 Once it's running, it connects your workspace to the ChatFS server so your AI can interact with it.
 
 ---
 
-## 📦 1. Get the binary
+## 1. Get the binary
 
 Download the latest release for your platform from the GitHub releases page.
 
@@ -37,7 +37,7 @@ You can rename it to `chatfs.exe` if you want.
 
 ---
 
-## ⚙️ 2. Set the gateway (required)
+## 2. Set the gateway (required)
 
 Before running anything, you need to tell ChatFS where your server is:
 
@@ -53,7 +53,7 @@ chatfs set-config gateway "wss://your-server.com/client/"
 
 ---
 
-## ▶️ 3. Run ChatFS
+## 3. Run ChatFS
 
 By default, ChatFS shares the **current directory**:
 
@@ -63,7 +63,7 @@ chatfs run
 
 ---
 
-### 📁 Run on a specific path
+### Run on a specific path
 
 ```bash
 chatfs run <PATH>
@@ -77,7 +77,7 @@ chatfs run ./my-project
 
 ---
 
-## 🔗 4. Use the session URL
+## 4. Use the session URL
 
 Once running, ChatFS will give you a workspace URL.
 
@@ -85,7 +85,7 @@ Paste that into your AI chat (Grok, Qwen, etc.), and it can start interacting wi
 
 ---
 
-## 📚 CLI help
+## CLI help
 
 To see all available commands:
 
@@ -95,8 +95,8 @@ chatfs help
 
 ---
 
-## ⚠️ Notes
+## Notes
 
 * The tool shares whatever directory you run it in (or specify)
 * Make sure you trust the environment before running it
-* For better privacy, consider self-hosting your [ChatFS Server](https://github.com/deexor64/chatfs-server)
+* For better privacy, consider self-hosting your [ChatFS - server](https://github.com/alien5516788/chatfs-server)
