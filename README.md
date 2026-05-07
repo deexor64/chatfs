@@ -186,16 +186,12 @@ It tries to keep things simple:
 
 ## 9. A quick note
 
-This tool gives an AI controlled access to your local workspace, so use it responsibly.
-
-I’m not responsible for anything that happens from misuse, accidental deletes, or weird prompts going wrong.
-
-Basically — don’t connect it to anything important without understanding what it can do.
-
-Operations like `list` and `content` are safe to try and most useful.
+* This tool gives an AI controlled access to your local workspace, so use it responsibly.
+* I’m not responsible for anything that happens from misuse, accidental deletes, or weird prompts going wrong.
+* Basically — don’t connect it to anything important without understanding what it can do.
+* Operations like `list` and `content` are safe to try and most useful.
 
 ## 10. Privacy note
 
-For better privacy, it's recommended to self-host the server part instead of using a public one.
-
-That way, your workspace traffic doesn’t go through any external server you don’t control.
+* For better privacy, it's recommended to self-host the server part instead of using a public one.
+* That way, your workspace traffic doesn’t go through any external server you don’t control.
